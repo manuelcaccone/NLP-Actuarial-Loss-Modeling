@@ -398,6 +398,6 @@ We acknowledge the open-source community for providing the foundational tools th
 - **Issues**: [GitHub Issues](https://github.com/manuel.caccone/actuarial-risk-analysis/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/manuel.caccone/actuarial-risk-analysis/discussions)
 - **Email**: [manuel.caccone@gmail.com](mailto:manuel.caccone@gmail.com)
-- **LinkedIn**: [Your Professional Profile](https://www.linkedin.com/in/manuel-caccone-42872141/?trk=hb_tab_pro_top)
+- **LinkedIn**: [Manuel Caccone, Quant Actuary, AI Engineer](https://www.linkedin.com/in/manuel-caccone-42872141/?trk=hb_tab_pro_top)
 
 **⭐ Star this repository if you find it useful for your actuarial analysis work!**
