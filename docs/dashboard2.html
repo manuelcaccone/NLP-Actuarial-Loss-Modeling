@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Crash Scene Reconstruction Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: white;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .dashboard-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .controls-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 1000;
+            min-width: 320px;
+            max-width: 380px;
+            border: 1px solid rgba(255, 69, 0, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+            transition: all 0.3s ease;
+        }
+
+        .scenario-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 1000;
+            min-width: 350px;
+            max-width: 420px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+        }
+
+        .timeline-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 1000;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            max-height: 180px;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #ff4500, #ff6b35);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .scenario-title {
+            background: linear-gradient(135deg, #00d4ff, #0088cc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .timeline-title {
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #ff6b35;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pattern-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .pattern-btn {
+            padding: 10px 12px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 69, 0, 0.08);
+            color: white;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 69, 0, 0.2);
+            text-align: left;
+        }
+
+        .pattern-btn:hover {
+            background: rgba(255, 69, 0, 0.15);
+            border-color: #ff4500;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 10px rgba(255, 69, 0, 0.2);
+        }
+
+        .pattern-btn.active {
+            background: linear-gradient(135deg, #ff4500, #ff6b35);
+            border-color: #ff4500;
+            box-shadow: 0 3px 15px rgba(255, 69, 0, 0.4);
+        }
+
+        .demographic-filters {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .demo-btn {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            cursor: pointer;
+            font-size: 9px;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            font-weight: 500;
+        }
+
+        .demo-btn:hover {
+            background: rgba(0, 212, 255, 0.15);
+            border-color: #00d4ff;
+        }
+
+        .demo-btn.active {
+            background: linear-gradient(135deg, #00d4ff, #0088cc);
+            border-color: #00d4ff;
+        }
+
+        .scenario-details {
+            background: rgba(0, 212, 255, 0.08);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-left: 3px solid #00d4ff;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .scenario-step {
+            margin-bottom: 8px;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 6px;
+            border-left: 2px solid #ffd700;
+            font-size: 10px;
+            line-height: 1.3;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .scenario-step:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .scenario-step.active {
+            background: rgba(255, 215, 0, 0.15);
+            border-left-color: #ffd700;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+        }
+
+        .step-number {
+            color: #ffd700;
+            font-weight: bold;
+            margin-right: 6px;
+        }
+
+        .timeline-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .play-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #1a1a2e;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            min-width: 80px;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 3px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .timeline-slider {
+            flex: 1;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+        }
+
+        .timeline-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+        }
+
+        .speed-control {
+            color: #ffd700;
+            font-size: 11px;
+            min-width: 60px;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6b35;
+            font-size: 18px;
+            z-index: 2000;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255, 107, 53, 0.3);
+            border-top: 3px solid #ff6b35;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .risk-indicator {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-left: 6px;
+        }
+
+        .risk-high { background: #ff4444; color: white; }
+        .risk-medium { background: #ffaa44; color: black; }
+        .risk-low { background: #44ff88; color: black; }
+
+        .camera-controls {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 999;
+        }
+
+        .camera-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .camera-btn:hover {
+            background: rgba(255, 69, 0, 0.8);
+            transform: scale(1.1);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 1px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ffb347);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            Loading 3D Crash Reconstruction...
+        </div>
+        
+        <div class="camera-controls">
+            <button class="camera-btn" id="resetCamera" title="Reset Camera">🎯</button>
+            <button class="camera-btn" id="topView" title="Top View">⬆️</button>
+            <button class="camera-btn" id="sideView" title="Side View">↔️</button>
+            <button class="camera-btn" id="autoRotate" title="Auto Rotate">🔄</button>
+        </div>
+        
+        <div class="controls-panel">
+            <div class="panel-title">🚗 Crash Pattern Selection</div>
+            
+            <div class="control-group">
+                <label>Select Incident Pattern</label>
+                <div class="pattern-buttons" id="pattern-buttons">
+                    <!-- Buttons generated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Demographic Filter</label>
+                <div class="demographic-filters" id="demographic-filters">
+                    <button class="demo-btn active" data-demo="all">All</button>
+                    <button class="demo-btn" data-demo="young-male">Young Male</button>
+                    <button class="demo-btn" data-demo="senior-male">Senior Male</button>
+                    <button class="demo-btn" data-demo="female">Female</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="scenario-panel">
+            <div class="panel-title scenario-title">📋 Incident Analysis</div>
+            <div id="scenario-content">
+                <div class="scenario-details">
+                    <h4>Select a pattern to view detailed crash reconstruction</h4>
+                    <p>Choose from the most common crash patterns to see a 3D reconstruction.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline-panel">
+            <div class="panel-title timeline-title">⏱️ Incident Timeline</div>
+            <div id="timeline-steps">Select a crash pattern to view reconstruction</div>
+            <div class="timeline-controls">
+                <button class="play-btn" id="play-btn">▶ Play</button>
+                <input type="range" class="timeline-slider" id="timeline-slider" min="0" max="100" value="0">
+                <div class="speed-control">Speed: <span id="speed-display">1.0x</span></div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div id="canvas-container"></div>
+    </div>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer;
+        let vehicles = {};
+        let currentPattern = null;
+        let currentStep = 0;
+        let isPlaying = false;
+        let animationSpeed = 1.0;
+        let cameraMode = 'default';
+        let autoRotateEnabled = false;
+
+        // Crash patterns data
+        const crashPatterns = {
+            'vehicle-lane-critical': {
+                name: 'Vehicle-Lane Critical',
+                description: 'Lane management failure leading to multi-vehicle collision',
+                riskScore: 1.70,
+                frequency: 'Very High',
+                demographics: ['young-male', 'all'],
+                steps: [
+                    { time: 0, description: 'Vehicle 1 approaches in left lane at normal speed', vehicles: [{id: 'v1', x: -15, z: -2, speed: 1.0, rotation: 0}] },
+                    { time: 1, description: 'Vehicle 2 enters scene in right lane', vehicles: [{id: 'v1', x: -10, z: -2}, {id: 'v2', x: -12, z: 2, speed: 1.2}] },
+                    { time: 2, description: 'Vehicle 1 begins unsafe lane change', vehicles: [{id: 'v1', x: -5, z: -1, changing: true, rotation: 15}, {id: 'v2', x: -6, z: 2}] },
+                    { time: 3, description: 'Critical moment - vehicles converge', vehicles: [{id: 'v1', x: 0, z: 0}, {id: 'v2', x: 0, z: 1.5, braking: true}] },
+                    { time: 4, description: 'Impact occurs', vehicles: [{id: 'v1', x: 2, z: 0, damaged: true}, {id: 'v2', x: 2, z: 0.8, damaged: true}] }
+                ]
+            },
+            'intersection-complexity': {
+                name: 'Intersection Complexity',
+                description: 'Complex intersection with right-of-way violation',
+                riskScore: 2.15,
+                frequency: 'High',
+                demographics: ['senior-male', 'all'],
+                steps: [
+                    { time: 0, description: 'Vehicle 1 approaches intersection', vehicles: [{id: 'v1', x: 0, z: -12, rotation: 90}] },
+                    { time: 1, description: 'Vehicle 2 approaches from east', vehicles: [{id: 'v1', x: 0, z: -8}, {id: 'v2', x: -10, z: 0, rotation: 0}] },
+                    { time: 2, description: 'V1 proceeds through intersection', vehicles: [{id: 'v1', x: 0, z: -2}, {id: 'v2', x: -6, z: 0}] },
+                    { time: 3, description: 'V2 misjudges gap and turns', vehicles: [{id: 'v1', x: 0, z: 2}, {id: 'v2', x: -2, z: 0, turning: true, rotation: 45}] },
+                    { time: 4, description: 'T-bone collision', vehicles: [{id: 'v1', x: 0, z: 4, damaged: true}, {id: 'v2', x: 0, z: 0, damaged: true}] }
+                ]
+            },
+            'vehicle-driver-critical': {
+                name: 'Vehicle-Driver Critical',
+                description: 'Driver distraction leading to rear-end collision',
+                riskScore: 2.42,
+                frequency: 'Medium',
+                demographics: ['female', 'all'],
+                steps: [
+                    { time: 0, description: 'Normal following distance', vehicles: [{id: 'v1', x: -8, z: 0}, {id: 'v2', x: 2, z: 0}] },
+                    { time: 1, description: 'Lead vehicle slows', vehicles: [{id: 'v1', x: -5, z: 0}, {id: 'v2', x: 4, z: 0, braking: true}] },
+                    { time: 2, description: 'Driver distracted', vehicles: [{id: 'v1', x: -2, z: 0, distracted: true}, {id: 'v2', x: 6, z: 0, stopped: true}] },
+                    { time: 3, description: 'Emergency braking too late', vehicles: [{id: 'v1', x: 2, z: 0, emergency_brake: true}, {id: 'v2', x: 7, z: 0, stopped: true}] },
+                    { time: 4, description: 'Rear-end collision', vehicles: [{id: 'v1', x: 6, z: 0, damaged: true}, {id: 'v2', x: 8, z: 0, damaged: true}] }
+                ]
+            },
+            'road-right-navigation': {
+                name: 'Road-Right Navigation', 
+                description: 'Curve navigation failure in adverse conditions',
+                riskScore: 1.73,
+                frequency: 'High',
+                demographics: ['young-male', 'all'],
+                steps: [
+                    { time: 0, description: 'Vehicle approaches curve', vehicles: [{id: 'v1', x: -10, z: -3, speed: 0.9}] },
+                    { time: 1, description: 'Entering curve too fast', vehicles: [{id: 'v1', x: -5, z: -1, speed: 0.9, rotation: 20}] },
+                    { time: 2, description: 'Loss of traction begins', vehicles: [{id: 'v1', x: 0, z: 1, understeer: true, rotation: 45}] },
+                    { time: 3, description: 'Vehicle sliding off road', vehicles: [{id: 'v1', x: 3, z: 4, sliding: true, rotation: 75}] },
+                    { time: 4, description: 'Impact with barrier', vehicles: [{id: 'v1', x: 5, z: 7, crashed: true, rotation: 90}] }
+                ]
+            }
+        };
+
+        class CrashReconstructionApp {
+            constructor() {
+                this.init();
+            }
+
+            async init() {
+                try {
+                    console.log('Initializing 3D crash reconstruction...');
+                    
+                    this.setupThreeJS();
+                    this.setupLighting();
+                    this.createEnvironment();
+                    this.setupUI();
+                    this.setupEventListeners();
+                    this.setupCameraControls();
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    console.log('Initialization complete');
+                    this.animate();
+                    
+                } catch (error) {
+                    console.error('Init failed:', error);
+                    this.showError('Failed to initialize: ' + error.message);
+                }
+            }
+
+            setupThreeJS() {
+                scene = new THREE.Scene();
+                scene.fog = new THREE.Fog(0x001122, 30, 150);
+
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.set(20, 15, 20);
+                camera.lookAt(0, 0, 0);
+
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setClearColor(0x001122, 1);
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+                document.getElementById('canvas-container').appendChild(renderer.domElement);
+            }
+
+            setupLighting() {
+                const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+                scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(30, 30, 20);
+                directionalLight.castShadow = true;
+                directionalLight.shadow.mapSize.width = 1024;
+                directionalLight.shadow.mapSize.height = 1024;
+                scene.add(directionalLight);
+
+                const fillLight = new THREE.DirectionalLight(0x4488ff, 0.3);
+                fillLight.position.set(-30, 20, -20);
+                scene.add(fillLight);
+            }
+
+            createEnvironment() {
+                // Road surface
+                const roadGeometry = new THREE.PlaneGeometry(80, 20);
+                const roadMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0x2a2a2a,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const road = new THREE.Mesh(roadGeometry, roadMaterial);
+                road.rotation.x = -Math.PI / 2;
+                road.receiveShadow = true;
+                scene.add(road);
+
+                this.createLaneMarkings();
+                this.createRoadBoundaries();
+            }
+
+            createLaneMarkings() {
+                const markingGeometry = new THREE.BoxGeometry(3, 0.02, 0.3);
+                const markingMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+                // Center line
+                for (let i = -30; i <= 30; i += 6) {
+                    const marking = new THREE.Mesh(markingGeometry, markingMaterial);
+                    marking.position.set(i, 0.01, 0);
+                    scene.add(marking);
+                }
+
+                // Lane boundaries
+                [-7, 7].forEach(z => {
+                    for (let i = -30; i <= 30; i += 6) {
+                        const marking = new THREE.Mesh(markingGeometry, markingMaterial);
+                        marking.position.set(i, 0.01, z);
+                        scene.add(marking);
+                    }
+                });
+            }
+
+            createRoadBoundaries() {
+                const barrierGeometry = new THREE.BoxGeometry(80, 0.8, 0.3);
+                const barrierMaterial = new THREE.MeshLambertMaterial({ color: 0x666666 });
+
+                [-12, 12].forEach(z => {
+                    const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
+                    barrier.position.set(0, 0.4, z);
+                    barrier.castShadow = true;
+                    scene.add(barrier);
+                });
+            }
+
+            createVehicle(id, color = 0x2194ce) {
+                const vehicleGroup = new THREE.Group();
+
+                // Car body
+                const bodyGeometry = new THREE.BoxGeometry(4, 1.5, 1.8);
+                const bodyMaterial = new THREE.MeshPhongMaterial({ color: color, shininess: 50 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.75;
+                body.castShadow = true;
+                vehicleGroup.add(body);
+
+                // Windshield
+                const windshieldGeometry = new THREE.BoxGeometry(2.5, 0.8, 1.6);
+                const windshieldMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0x87ceeb, transparent: true, opacity: 0.6 
+                });
+                const windshield = new THREE.Mesh(windshieldGeometry, windshieldMaterial);
+                windshield.position.set(0.5, 1.4, 0);
+                vehicleGroup.add(windshield);
+
+                // Wheels
+                const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.25);
+                const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+                
+                [[-1.2, 0.3, -1], [-1.2, 0.3, 1], [1.2, 0.3, -1], [1.2, 0.3, 1]].forEach(pos => {
+                    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                    wheel.position.set(...pos);
+                    wheel.rotation.z = Math.PI / 2;
+                    vehicleGroup.add(wheel);
+                });
+
+                // Brake lights
+                const brakeGeometry = new THREE.SphereGeometry(0.12);
+                const brakeMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xff0000, transparent: true, opacity: 0.3 
+                });
+                
+                const leftBrake = new THREE.Mesh(brakeGeometry, brakeMaterial.clone());
+                leftBrake.position.set(-1.8, 0.7, -0.7);
+                vehicleGroup.add(leftBrake);
+
+                const rightBrake = new THREE.Mesh(brakeGeometry, brakeMaterial.clone());
+                rightBrake.position.set(-1.8, 0.7, 0.7);
+                vehicleGroup.add(rightBrake);
+
+                vehicleGroup.userData = { 
+                    id, brakeLeft: leftBrake, brakeRight: rightBrake,
+                    body, windshield, originalColor: color, isAnimating: false
+                };
+
+                scene.add(vehicleGroup);
+                vehicles[id] = vehicleGroup;
+                return vehicleGroup;
+            }
+
+            setupUI() {
+                this.createPatternButtons();
+                this.updateScenarioPanel();
+            }
+
+            createPatternButtons() {
+                const container = document.getElementById('pattern-buttons');
+                container.innerHTML = '';
+                
+                Object.entries(crashPatterns).forEach(([key, pattern]) => {
+                    const button = document.createElement('button');
+                    button.className = 'pattern-btn';
+                    button.dataset.pattern = key;
+                    
+                    const riskClass = pattern.riskScore > 2.0 ? 'risk-high' : 
+                                     pattern.riskScore > 1.6 ? 'risk-medium' : 'risk-low';
+                    
+                    button.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${pattern.name}</strong>
+                                <br><small style="opacity: 0.8;">${pattern.description}</small>
+                            </div>
+                            <span class="risk-indicator ${riskClass}">${pattern.riskScore}</span>
+                        </div>
+                    `;
+                    
+                    button.addEventListener('click', () => this.selectPattern(key, button));
+                    container.appendChild(button);
+                });
+            }
+
+            selectPattern(patternKey, buttonElement) {
+                document.querySelectorAll('.pattern-btn').forEach(btn => btn.classList.remove('active'));
+                buttonElement.classList.add('active');
+                this.loadCrashPattern(patternKey);
+            }
+
+            loadCrashPattern(patternKey) {
+                try {
+                    currentPattern = crashPatterns[patternKey];
+                    currentStep = 0;
+                    isPlaying = false;
+
+                    this.clearVehicles();
+                    this.updateScenarioPanel();
+                    this.updateTimelinePanel();
+
+                    // Create vehicles
+                    const uniqueVehicles = new Set();
+                    currentPattern.steps.forEach(step => {
+                        step.vehicles.forEach(v => uniqueVehicles.add(v.id));
+                    });
+
+                    const colors = [0x2194ce, 0xff4444, 0x44ff44, 0xffaa44, 0x8844ff];
+                    let colorIndex = 0;
+
+                    uniqueVehicles.forEach(vehicleId => {
+                        this.createVehicle(vehicleId, colors[colorIndex % colors.length]);
+                        colorIndex++;
+                    });
+
+                    this.updateVehiclePositions(0, false);
+
+                    // Reset controls
+                    document.getElementById('timeline-slider').value = 0;
+                    document.getElementById('play-btn').textContent = '▶ Play';
+                    document.getElementById('progress-fill').style.width = '0%';
+
+                } catch (error) {
+                    console.error('Error loading pattern:', error);
+                }
+            }
+
+            clearVehicles() {
+                Object.values(vehicles).forEach(vehicle => {
+                    scene.remove(vehicle);
+                    vehicle.traverse(child => {
+                        if (child.geometry) child.geometry.dispose();
+                        if (child.material) {
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(material => material.dispose());
+                            } else {
+                                child.material.dispose();
+                            }
+                        }
+                    });
+                });
+                vehicles = {};
+            }
+
+            updateScenarioPanel() {
+                const content = document.getElementById('scenario-content');
+                
+                if (!currentPattern) {
+                    content.innerHTML = `
+                        <div class="scenario-details">
+                            <h4>Select a pattern to view detailed crash reconstruction</h4>
+                            <p>Choose from the most common crash patterns to see a 3D reconstruction.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const pattern = currentPattern;
+                const riskClass = pattern.riskScore > 2.0 ? 'risk-high' : 
+                                 pattern.riskScore > 1.6 ? 'risk-medium' : 'risk-low';
+                
+                content.innerHTML = `
+                    <div class="scenario-details">
+                        <h4>${pattern.name}</h4>
+                        <p><strong>Description:</strong> ${pattern.description}</p>
+                        <p><strong>Risk Score:</strong> <span class="risk-indicator ${riskClass}">${pattern.riskScore}</span></p>
+                        <p><strong>Frequency:</strong> ${pattern.frequency}</p>
+                        <p><strong>Total Steps:</strong> ${pattern.steps.length}</p>
+                    </div>
+                    
+                    <div style="background: rgba(255, 215, 0, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #ffd700;">
+                        <h5 style="margin: 0 0 8px 0; color: #ffd700;">🎬 3D Reconstruction Active</h5>
+                        <p style="margin: 0; font-size: 10px; line-height: 1.3;">Use timeline controls below. Camera controls on the left.</p>
+                    </div>
+                `;
+            }
+
+            updateTimelinePanel() {
+                const timelineDiv = document.getElementById('timeline-steps');
+                
+                if (!currentPattern) {
+                    timelineDiv.innerHTML = 'Select a crash pattern to view reconstruction';
+                    return;
+                }
+
+                const pattern = currentPattern;
+                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px; max-height: 80px; overflow-y: auto;">';
+                
+                pattern.steps.forEach((step, index) => {
+                    html += `
+                        <div class="scenario-step" data-step="${index}" onclick="app.jumpToStep(${index})">
+                            <span class="step-number">${index + 1}.</span>
+                            ${step.description}
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                timelineDiv.innerHTML = html;
+            }
+
+            jumpToStep(stepIndex) {
+                if (!currentPattern || stepIndex < 0 || stepIndex >= currentPattern.steps.length) return;
+                
+                currentStep = stepIndex;
+                this.updateVehiclePositions(stepIndex, true);
+                
+                const progress = (stepIndex / (currentPattern.steps.length - 1)) * 100;
+                document.getElementById('timeline-slider').value = progress;
+                document.getElementById('progress-fill').style.width = progress + '%';
+            }
+
+            updateVehiclePositions(stepIndex, animate = true) {
+                if (!currentPattern || stepIndex < 0 || stepIndex >= currentPattern.steps.length) return;
+
+                const step = currentPattern.steps[stepIndex];
+                
+                // Highlight current step
+                document.querySelectorAll('.scenario-step').forEach((el, index) => {
+                    el.classList.toggle('active', index === stepIndex);
+                });
+
+                step.vehicles.forEach(vehicleData => {
+                    const vehicle = vehicles[vehicleData.id];
+                    if (!vehicle) return;
+
+                    const targetPosition = new THREE.Vector3(vehicleData.x, 0, vehicleData.z);
+                    const targetRotation = (vehicleData.rotation || 0) * Math.PI / 180;
+
+                    if (animate && !vehicle.userData.isAnimating) {
+                        this.animateVehicle(vehicle, targetPosition, targetRotation, vehicleData);
+                    } else {
+                        vehicle.position.copy(targetPosition);
+                        vehicle.rotation.y = targetRotation;
+                        this.updateVehicleState(vehicle, vehicleData);
+                    }
+                });
+            }
+
+            animateVehicle(vehicle, targetPosition, targetRotation, vehicleData) {
+                vehicle.userData.isAnimating = true;
+                
+                const startPosition = vehicle.position.clone();
+                const startRotation = vehicle.rotation.y;
+                const duration = 800 / animationSpeed;
+                const startTime = performance.now();
+
+                const animate = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    const easeProgress = 1 - Math.pow(1 - progress, 2);
+                    
+                    vehicle.position.lerpVectors(startPosition, targetPosition, easeProgress);
+                    vehicle.rotation.y = startRotation + (targetRotation - startRotation) * easeProgress;
+                    
+                    this.updateVehicleState(vehicle, vehicleData);
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        vehicle.userData.isAnimating = false;
+                    }
+                };
+                
+                requestAnimationFrame(animate);
+            }
+
+            updateVehicleState(vehicle, vehicleData) {
+                const userData = vehicle.userData;
+                
+                // Reset states
+                userData.brakeLeft.material.opacity = 0.3;
+                userData.brakeRight.material.opacity = 0.3;
+                userData.body.material.color.setHex(userData.originalColor);
+
+                // Apply state effects
+                if (vehicleData.braking || vehicleData.emergency_brake) {
+                    userData.brakeLeft.material.opacity = 1.0;
+                    userData.brakeRight.material.opacity = 1.0;
+                }
+
+                if (vehicleData.damaged) {
+                    userData.body.material.color.setHex(0x8b0000);
+                    this.createDamageEffect(vehicle.position);
+                }
+
+                if (vehicleData.distracted) {
+                    userData.body.material.color.setHex(0xffaa00);
+                }
+
+                if (vehicleData.sliding || vehicleData.understeer) {
+                    userData.body.material.color.setHex(0xff6600);
+                }
+            }
+
+            createDamageEffect(position) {
+                const particleCount = 10;
+                const particles = [];
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.05),
+                        new THREE.MeshBasicMaterial({ 
+                            color: Math.random() > 0.5 ? 0xff4444 : 0xffaa00,
+                            transparent: true
+                        })
+                    );
+                    
+                    particle.position.set(
+                        position.x + (Math.random() - 0.5) * 2,
+                        position.y + Math.random(),
+                        position.z + (Math.random() - 0.5) * 2
+                    );
+                    
+                    particle.velocity = new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.1,
+                        Math.random() * 0.1,
+                        (Math.random() - 0.5) * 0.1
+                    );
+                    
+                    scene.add(particle);
+                    particles.push(particle);
+                }
+
+                let life = 2000;
+                const animateParticles = () => {
+                    life -= 16;
+                    if (life <= 0) {
+                        particles.forEach(p => {
+                            scene.remove(p);
+                            p.geometry.dispose();
+                            p.material.dispose();
+                        });
+                        return;
+                    }
+
+                    particles.forEach(particle => {
+                        particle.position.add(particle.velocity);
+                        particle.velocity.y -= 0.002;
+                        particle.material.opacity = life / 2000;
+                    });
+
+                    requestAnimationFrame(animateParticles);
+                };
+                animateParticles();
+            }
+
+            setupEventListeners() {
+                // Timeline slider
+                const slider = document.getElementById('timeline-slider');
+                slider.addEventListener('input', (e) => {
+                    if (!currentPattern) return;
+                    
+                    const progress = parseFloat(e.target.value) / 100;
+                    const stepIndex = Math.floor(progress * (currentPattern.steps.length - 1));
+                    this.jumpToStep(stepIndex);
+                });
+
+                // Play button
+                const playBtn = document.getElementById('play-btn');
+                playBtn.addEventListener('click', () => {
+                    this.togglePlayback();
+                });
+
+                // Demographic filters
+                document.getElementById('demographic-filters').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('demo-btn')) {
+                        document.querySelectorAll('.demo-btn').forEach(btn => btn.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.filterPatternsByDemographic(e.target.dataset.demo);
+                    }
+                });
+
+                // Window resize
+                window.addEventListener('resize', () => this.onWindowResize());
+
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    if (!currentPattern) return;
+                    
+                    switch(e.code) {
+                        case 'Space':
+                            e.preventDefault();
+                            this.togglePlayback();
+                            break;
+                        case 'ArrowLeft':
+                            e.preventDefault();
+                            this.jumpToStep(Math.max(0, currentStep - 1));
+                            break;
+                        case 'ArrowRight':
+                            e.preventDefault();
+                            this.jumpToStep(Math.min(currentPattern.steps.length - 1, currentStep + 1));
+                            break;
+                    }
+                });
+            }
+
+            setupCameraControls() {
+                document.getElementById('resetCamera').addEventListener('click', () => {
+                    this.setCameraPosition(20, 15, 20);
+                    cameraMode = 'default';
+                });
+
+                document.getElementById('topView').addEventListener('click', () => {
+                    this.setCameraPosition(0, 40, 0);
+                    cameraMode = 'top';
+                });
+
+                document.getElementById('sideView').addEventListener('click', () => {
+                    this.setCameraPosition(30, 5, 0);
+                    cameraMode = 'side';
+                });
+
+                document.getElementById('autoRotate').addEventListener('click', () => {
+                    autoRotateEnabled = !autoRotateEnabled;
+                    document.getElementById('autoRotate').style.background = autoRotateEnabled ? 
+                        'rgba(255, 69, 0, 0.8)' : 'rgba(0, 0, 0, 0.7)';
+                });
+            }
+
+            setCameraPosition(x, y, z) {
+                const targetPosition = new THREE.Vector3(x, y, z);
+                const startPosition = camera.position.clone();
+                const duration = 1000;
+                const startTime = performance.now();
+
+                const animate = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const easeProgress = 1 - Math.pow(1 - progress, 2);
+                    
+                    camera.position.lerpVectors(startPosition, targetPosition, easeProgress);
+                    camera.lookAt(0, 0, 0);
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+                
+                requestAnimationFrame(animate);
+            }
+
+            togglePlayback() {
+                if (!currentPattern) return;
+
+                isPlaying = !isPlaying;
+                const playBtn = document.getElementById('play-btn');
+                playBtn.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+
+                if (isPlaying) {
+                    this.playAnimation();
+                }
+            }
+
+            playAnimation() {
+                if (!isPlaying || !currentPattern) return;
+
+                const totalSteps = currentPattern.steps.length;
+                const stepDuration = 1500 / animationSpeed;
+
+                const nextStep = () => {
+                    if (!isPlaying) return;
+
+                    currentStep = (currentStep + 1) % totalSteps;
+                    this.updateVehiclePositions(currentStep, true);
+
+                    const progress = (currentStep / (totalSteps - 1)) * 100;
+                    document.getElementById('timeline-slider').value = progress;
+                    document.getElementById('progress-fill').style.width = progress + '%';
+
+                    if (currentStep === totalSteps - 1) {
+                        setTimeout(() => {
+                            if (isPlaying) {
+                                currentStep = -1;
+                                setTimeout(nextStep, stepDuration);
+                            }
+                        }, stepDuration * 2);
+                    } else {
+                        setTimeout(nextStep, stepDuration);
+                    }
+                };
+
+                setTimeout(nextStep, stepDuration);
+            }
+
+            filterPatternsByDemographic(demographic) {
+                const buttons = document.querySelectorAll('.pattern-btn');
+                
+                buttons.forEach(button => {
+                    const patternKey = button.dataset.pattern;
+                    const pattern = crashPatterns[patternKey];
+                    
+                    const shouldShow = demographic === 'all' || 
+                                     pattern.demographics.includes(demographic);
+                    
+                    button.style.display = shouldShow ? 'block' : 'none';
+                });
+            }
+
+            onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+
+                if (autoRotateEnabled && cameraMode === 'default') {
+                    const time = Date.now() * 0.0002;
+                    camera.position.x = Math.cos(time) * 25;
+                    camera.position.z = Math.sin(time) * 25;
+                    camera.lookAt(0, 0, 0);
+                }
+
+                renderer.render(scene, camera);
+            }
+
+            showError(message) {
+                const loading = document.getElementById('loading');
+                if (loading) loading.style.display = 'none';
+                
+                console.error(message);
+                alert(message);
+            }
+        }
+
+        // Global app instance
+        let app;
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Starting 3D crash reconstruction dashboard...');
+            app = new CrashReconstructionApp();
+        });
+
+        // Expose jumpToStep globally for onclick handlers
+        window.app = { 
+            jumpToStep: (stepIndex) => app?.jumpToStep(stepIndex) 
+        };
+    </script>
+</body>
+</html>

@@ -147,6 +147,34 @@ HF_TOKEN=your_huggingface_token_here
 HF_ORGANIZATION=ConsulStat
 ```
 
+
+## 📊 Interactive Dashboard
+
+### 🎯 Live Results Dashboard
+Explore our comprehensive actuarial risk analysis through an interactive dashboard showcasing:
+- **Real-time Risk Assessment Metrics**
+- **Demographic Risk Profiling Visualizations**
+- **Topic Modeling Results with BERTopic**
+- **Premium Adjustment Recommendations**
+
+**🚀 [Launch Interactive Dashboard](https://manuel.caccone.github.io/actuarial-risk-analysis/dashboard.html)**
+
+### Dashboard Features:
+- **Risk Score Heatmaps** by demographic segments
+- **Interactive Topic Clustering** with BERTopic results
+- **Premium Adjustment Calculator** based on risk profiles
+- **Real-time Model Performance Metrics**
+- **Downloadable Actuarial Reports**
+
+### Technical Specifications:
+- **Framework**: HTML5 + D3.js/Plotly for visualizations
+- **Data Sources**: NMVCCS crash data + Insurance claims analysis
+- **Update Frequency**: Real-time model predictions
+- **Browser Compatibility**: Chrome, Firefox, Safari, Edge
+
+![Dashboard Preview](docs/assets/images/dashboard-preview.png)
+
+
 ## 📊 Data Sources
 
 ### Primary Datasets
