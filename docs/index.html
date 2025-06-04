@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Crash Reconstruction - Redirecting...</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 69, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 107, 53, 0.3);
+            border-top: 4px solid #ff6b35;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h1 {
+            background: linear-gradient(135deg, #ff4500, #ff6b35);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        p {
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+        .manual-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #00d4ff, #0088cc);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: transform 0.2s ease;
+        }
+        .manual-link:hover {
+            transform: scale(1.05);
+        }
+    </style>
+    <script>
+        // Automatic redirect after 3 seconds
+        setTimeout(() => {
+            window.location.href = 'dashboard.html';
+        }, 3000);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h1>🚗 3D Crash Reconstruction Dashboard</h1>
+        <p>Redirecting to dashboard...</p>
+        <p><small>You will be automatically redirected in 3 seconds</small></p>
+        <a href="dashboard.html" class="manual-link">Go to Dashboard Now</a>
+    </div>
+</body>
+</html>

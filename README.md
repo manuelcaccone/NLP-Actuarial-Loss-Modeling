@@ -101,8 +101,8 @@ graph TD
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/manuel.caccone/actuarial-risk-analysis.git
-   cd actuarial-risk-analysis
+   git clone https://github.com/manuel.caccone/NLP-Actuarial-Loss-Modeling.git
+   cd NLP-Actuarial-Loss-Modeling
    ```
 
 2. **Environment Setup**
@@ -157,7 +157,7 @@ Explore our comprehensive actuarial risk analysis through an interactive dashboa
 - **Topic Modeling Results with BERTopic**
 - **Premium Adjustment Recommendations**
 
-**🚀 [Launch Interactive Dashboard](https://manuel.caccone.github.io/actuarial-risk-analysis/dashboard.html)**
+**🚀 [Launch Interactive Dashboard](https://manuel.caccone.github.io/NLP-Actuarial-Loss-Modeling/dashboard.html)**
 
 ### Dashboard Features:
 - **Risk Score Heatmaps** by demographic segments
@@ -423,8 +423,8 @@ We acknowledge the open-source community for providing the foundational tools th
 
 ## 📞 Contact & Support
 
-- **Issues**: [GitHub Issues](https://github.com/manuel.caccone/actuarial-risk-analysis/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/manuel.caccone/actuarial-risk-analysis/discussions)
+- **Issues**: [GitHub Issues](https://github.com/manuel.caccone/NLP-Actuarial-Loss-Modeling/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/manuel.caccone/NLP-Actuarial-Loss-Modeling/discussions)
 - **Email**: [manuel.caccone@gmail.com](mailto:manuel.caccone@gmail.com)
 - **LinkedIn**: [Manuel Caccone, Quant Actuary, AI Engineer](https://www.linkedin.com/in/manuel-caccone-42872141/?trk=hb_tab_pro_top)
 
