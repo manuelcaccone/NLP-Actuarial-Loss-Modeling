@@ -1,0 +1,53 @@
+# Ignora directory specifiche dell'ambiente virtuale
+.venv/
+venv/
+
+# Ignora i file di output generati dagli script/notebook
+# File di output del scraping NMVCCS [1, 2]
+output.csv
+DB.csv
+
+# File di output della generazione testi assicurativi [3-5]
+insurance_claims_generated_texts.csv
+DB_pro_embedder.csv
+
+# Ignora directory con dati scaricati o temporanei
+# Dati NMVCCS scaricati (se salvati localmente) [6-8]
+# Supponendo una directory comune per i dati raw
+data/raw/nmvccs/*
+
+# Dataset scaricati (e.g., Mendeley) [3]
+# Supponendo una directory comune per i dati input
+data/input/*
+
+# File temporanei dalla generazione di dati sintetici [9]
+# Supponendo una directory temporanea
+tmp/
+synthetic_data_temp/
+
+# Ignora i modelli addestrati se sono voluminosi o possono essere rigenerati/scaricati
+# Il modello embedder è su Hugging Face Hub [10-12]
+models/embedder/*
+
+# Il modello BERTopic è menzionato come salvato [13]
+models/bertopic/*
+
+# Ignora i log e i dati di tracking (e.g., Weights & Biases) [14-17]
+wandb/
+
+# Ignora i file cache e le directory temporanee Python
+__pycache__/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# File specifici dell'IDE (es. VS Code)
+.vscode/
+
+# File di configurazione dell'API Key (se non gestita tramite variabili d'ambiente)
+# Le fonti raccomandano variabili d'ambiente [18]
+.env
+*.key
+*.pem
+
+# Log di runtime generati
+*.log

@@ -1,0 +1,27 @@
+# Libraries for web scraping and data parsing
+beautifulsoup4         # Parsing complex HTML files (e.g., NMVCCS)
+html2text              # Convert HTML to plain text
+
+# General libraries for data handling and processing
+pandas                 # DataFrame and tabular data manipulation
+datasets               # Dataset management, useful for fine-tuning pipelines
+tqdm                   # Progress bars for downloads and batch processing
+
+# Libraries for LLM integration, text generation/augmentation
+openai                 # OpenAI API for data augmentation and Q&A generation
+
+# Fine-tuning embeddings and LlamaIndex pipeline
+llama-index            # Core library for TextNode management and Q&A pipeline
+transformers           # HuggingFace library for using/fine-tuning models
+torch                  # PyTorch backend required by transformers
+sentence-transformers  # Embedding models, used for fine-tuning
+wandb                  # Experiment tracking and monitoring
+
+# BERTopic and actuarial analysis
+bertopic               # Main library for topic modeling
+cuml                   # GPU-accelerated UMAP/HDBSCAN (requires NVIDIA CUDA)
+# umap-learn           # CPU alternative to cuML UMAP (uncomment if needed)
+# hdbscan              # CPU alternative to cuML HDBSCAN (uncomment if needed)
+
+# Notebook environment
+ipykernel              # Required for running code in Jupyter/IPython environments
