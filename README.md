@@ -101,7 +101,7 @@ graph TD
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/YourUsername/actuarial-risk-analysis.git
+   git clone https://github.com/manuel.caccone/actuarial-risk-analysis.git
    cd actuarial-risk-analysis
    ```
 
@@ -165,132 +165,144 @@ HF_ORGANIZATION=ConsulStat
 
 ## 🎯 Usage Guide
 
-### Step-by-Step Execution
-
-1. **Data Scraping**
-   ```bash
-   python scripts/01_nmvccs_scraping.py
-   # Downloads crash data with progress tracking
-   ```
-
-2. **Field Extraction**
-   ```bash
-   python scripts/02_field_extraction.py
-   # Extracts actuarial variables to DB.csv
-   ```
-
-3. **Text Augmentation**
-   ```bash
-   python scripts/03_text_augmentation.py
-   # Generates enhanced claim narratives
-   ```
-
-4. **Model Training**
-   ```bash
-   python scripts/04_embedding_training.py
-   # Fine-tunes embedding model with W&B tracking
-   ```
-
-5. **Topic Modeling**
-   ```bash
-   python scripts/05_bertopic_analysis.py
-   # Performs large-scale topic modeling
-   ```
-
-6. **Risk Analysis**
-   ```bash
-   python scripts/06_demographic_analysis.py
-   # Generates demographic risk profiles
-   ```
-
 ### Jupyter Notebooks
 
-Explore the interactive analysis notebooks:
+Execute the analysis pipeline through these interactive notebooks:
 
-- `notebooks/01_Data_Exploration.ipynb`: Initial data analysis
-- `notebooks/02_Text_Augmentation_Demo.ipynb`: GPT augmentation showcase
-- `notebooks/03_Model_Training_Analysis.ipynb`: Training metrics and validation
-- `notebooks/04_Topic_Modeling_Insights.ipynb`: BERTopic results visualization
-- `notebooks/05_Risk_Analysis_Dashboard.ipynb`: Actuarial insights dashboard
+1. **0_DATA_SCRAPING_NMVCCS.ipynb**: NMVCCS crash data scraping and initial processing
+2. **1_DATA_RETRIEVING.ipynb**: Actuarial field extraction from XML/HTML files
+3. **2_EMBEDDER_FT_TEXT_AUGMENTATION.ipynb**: GPT-powered text augmentation for insurance claims
+4. **3_EMBEDDER_FT_MODEL_TRAIN.ipynb**: Embedding model fine-tuning and evaluation
+5. **4_BERTopic_FINE_TUNING.ipynb**: Large-scale topic modeling with BERTopic
+6. **5_LOSS_ACTUARIAL_ANALYSIS.ipynb**: Demographic risk analysis and strategic insights
 
 ## 📈 Results & Actuarial Insights
 
-### 🎯 BERTopic Risk Patterns
+This section summarizes key findings from our actuarial and demographic analysis, highlighting distinctive risk profiles emerging from NMVCCS data and their potential impact on insurance strategies.
 
-Our analysis identified 10 distinct semantic patterns with clear actuarial implications:
+### 🎯 Executive Summary
 
-#### High-Risk Patterns
-- **Pattern 2 (Critical - Maximum Mortality)**: Intersection left-turn collisions
-  - Keywords: "intersection", "left", "critical"
-  - **Risk Impact**: Highest mortality risk
-  - **Premium Adjustment**: +200-300%
+The demographic analysis identified **distinctive risk patterns** that can inform actuarial pricing strategies and risk management. Analysis of **1,586 complete records** combining demographic data and topic patterns revealed **high-risk profiles** requiring particular attention.
 
-- **Pattern 0 (Emergency Events)**: Pre-crash critical events
-  - Keywords: "pre", "critical", "event"
-  - **Risk Impact**: High injury risk, moderate mortality
-  - **Premium Adjustment**: +100-150%
+**Key Metrics:**
+- **Total Records Analyzed**: 1,586
+- **Risk Score Range**: 1.36 to 1.79 (weighted severity scale)
+- **Highest Volume Group**: Males 16-25 years (18.9% of analyzed volume)
+- **Highest Risk Score Groups**: **Males 36-45 years** and **Males 65+ years** (Risk Score: **1.79**)
+- **Safest Group**: Females 46-55 years (Risk Score: 1.47)
 
-#### Moderate Risk Patterns
-- **Pattern 1 (Intersection Uncertainty)**: Complex intersection scenarios
-  - High uncertainty due to "Unknown" severity classifications
-  - Requires conservative reserves
+### 📊 High-Risk Demographic Profiles
 
-- **Pattern 3 (Safety Equipment Effectiveness)**: Belted critical events
-  - Keywords: "belted", "precrash"
-  - No mortality despite criticality (seatbelt effectiveness)
-  - **Premium Adjustment**: +50-75%
+The following demographic segments were identified with the highest risk scores:
 
-#### Standard Risk Patterns
-- **Pattern -1 (Baseline)**: Standard two-vehicle lane incidents
-  - Represents portfolio baseline risk
-  - **Premium Adjustment**: Reference level (0%)
+#### 1. **Males 36-45 Years (Risk Score: 1.79)**
+- **Sample Size**: 152 cases
+- **Characteristics**: Possible overconfidence, aggressive driving styles
+- **Actuarial Implication**: Career peaks may correlate with risk-taking behaviors
+- **Recommendation**: **Premium increase +15-20%**
 
-### 📊 Demographic Risk Analysis
+#### 2. **Males 65+ Years (Risk Score: 1.79)**
+- **Sample Size**: 84 cases
+- **Characteristics**: Reduced reflexes, possible medical conditions
+- **Actuarial Implication**: High severity but moderate frequency profile
+- **Recommendation**: **Senior driver monitoring programs**
 
-Analysis of 1,586 complete records revealed significant demographic risk variations:
+#### 3. **Females 65+ Years (Risk Score: 1.74)**
+- **Sample Size**: 67 cases
+- **Characteristics**: Similar aging effects to males, but slightly lower risk
+- **Actuarial Implication**: Gender differentiation remains significant in senior segments
+- **Recommendation**: **Gender-differentiated pricing for senior segment**
 
-#### Highest Risk Groups
-1. **Males 36-45**: Risk Score 1.79
-2. **Males 65+**: Risk Score 1.79
-3. **Females 65+**: Risk Score 1.74
-4. **Males 56-65**: Risk Score 1.71
+#### 4. **Males 56-65 Years (Risk Score: 1.71)**
+- **Sample Size**: 56 cases
+- **Characteristics**: Possible stress related to pre-retirement transition
+- **Actuarial Implication**: Often overlooked segment with significantly elevated risk
+- **Recommendation**: **Targeted wellness and safety programs**
 
-#### Lowest Risk Groups
-1. **Females 46-55**: Risk Score 1.47
-2. **Females 26-35**: Risk Score 1.49
-3. **Females 16-25**: Risk Score 1.49
+### 📈 Volume vs. Risk Paradox Analysis
 
-#### Key Findings
+The analysis revealed a **fundamental disconnect** between portfolio volume concentration and risk intensity:
 
-**Volume vs. Risk Paradox**: High-volume segments (young drivers) show moderate risk, while low-volume segments (elderly males) show extreme risk.
+**High Volume, Moderate Risk Segments:**
+- Males 16-25: 18.9% volume, Risk Score 1.55 (7th position)
+- Females 16-25: 15.3% volume, Risk Score 1.49 (9th position)
+- Males 26-35: 10.7% volume, Risk Score 1.55 (8th position)
 
-**Gender-Specific Patterns**:
-- **Males**: Higher crash frequency, particularly in complex scenarios (intersections, lane changes)
-- **Females**: Higher injury severity when crashes occur, even in comparable incidents
+**Low Volume, High Risk Segments:**
+- Males 65+: 5.3% volume, Risk Score 1.79 (2nd highest)
+- Males 56-65: 3.5% volume, Risk Score 1.71 (4th highest)
+
+These findings highlight a **pricing optimization opportunity**, suggesting that young drivers may be **excessively penalized** relative to their actual risk, while low-volume senior segments show disproportionately high risk.
+
+**Strategic Actuarial Implications:**
+- **Pricing Optimization**: Recalibrate premiums for young drivers
+- **Portfolio Rebalancing**: Focus retention efforts on moderate-risk, high-volume segments
+- **Risk Selection**: Careful underwriting for low-volume, high-risk demographics
+- **Product Development**: Offer different value propositions for volume vs. risk-based segments
+
+### 🚹🚺 Gender-Specific Risk Pattern Analysis
+
+The analysis confirms findings from scientific literature: **males show higher crash frequency**, while **females tend to suffer more severe injuries** when crashes occur.
+
+#### **Male Drivers - Riskiest Patterns**
+1. **Intersection Complexity Pattern** (Risk Score: **2.15**, 40 cases)
+   - High-risk behavior in complex traffic scenarios
+   - *Actuarial Action*: Intersection-specific training requirements
+
+2. **Road-Right Pattern** (Risk Score: **1.73**, 133 cases)
+   - Issues navigating curves and directional changes
+   - *Actuarial Action*: Enhanced road geometry education
+
+3. **Vehicle-Lane Pattern** (Risk Score: **1.70**, 327 cases)
+   - Difficulties in lane management and vehicle interactions
+   - *Actuarial Action*: Discounts for lane departure warning systems
+
+#### **Female Drivers - Riskiest Patterns**
+1. **Vehicle-Driver Critical Pattern** (Risk Score: **2.42**, 19 cases)
+   - Higher severity when crashes occur
+   - *Actuarial Action*: Incentives for advanced safety equipment
+
+2. **Secondary Intersection Pattern** (Risk Score: **1.82**, 22 cases)
+   - Similar intersection challenges to males, but different frequency
+   - *Actuarial Action*: Gender-differentiated intersection training
 
 ### 🎯 Strategic Underwriting Recommendations
 
-#### Geographic Targeting
-- **High-intersection density areas**: -15-25% risk reduction through selective underwriting
-- **Rural vs. urban risk profiles**: Differentiated pricing strategies
-
-#### Behavioral Scoring
-- **Left-turn frequency**: +10-50% premium adjustment based on driving patterns
-- **Pre-crash system usage**: -10-20% discount for advanced safety features
-
-#### Demographic Segmentation
-- **Elderly male drivers**: Enhanced underwriting scrutiny
-- **Young driver re-evaluation**: Potential for reduced penalties based on actual risk data
-
 #### Risk Classification Matrix
 
-| Pattern | Demographic | Risk Multiplier | Premium Adjustment |
-|---------|-------------|-----------------|-------------------|
-| Pattern 2 | Any | 2.5x | +200-300% |
-| Pattern 0 | Males 65+ | 2.2x | +150-200% |
-| Pattern 1 | Females 65+ | 1.9x | +100-150% |
-| Pattern 3 | Young drivers | 1.3x | +25-50% |
-| Pattern -1 | Standard | 1.0x | Baseline |
+| Risk Profile | Demographic | Risk Multiplier | Premium Adjustment | Action Required |
+|--------------|-------------|-----------------|-------------------|-----------------|
+| **Critical** | Males 36-45 | 1.79x | +15-20% | Enhanced screening |
+| **Critical** | Males 65+ | 1.79x | +10-15% | Medical monitoring |
+| **High** | Females 65+ | 1.74x | +10-15% | Safety incentives |
+| **High** | Males 56-65 | 1.71x | +8-12% | Wellness programs |
+| **Moderate** | Young drivers | 1.50x | Current rates | Rate optimization |
+| **Baseline** | Females 46-55 | 1.47x | Reference | Standard terms |
+
+#### Geographic and Behavioral Adjustments
+
+**Geographic Targeting:**
+- **High-intersection density areas**: Selective underwriting for risk reduction
+- **Rural vs. urban differentiation**: Tailored pricing strategies based on risk patterns
+
+**Behavioral Scoring:**
+- **Intersection navigation frequency**: Risk-based premium adjustments
+- **Advanced safety system usage**: Discount programs for crash prevention technology
+
+#### Portfolio Optimization Strategy
+
+1. **Young Driver Segment**: Potential for reduced penalties based on actual risk data
+2. **Senior Male Segment**: Enhanced underwriting scrutiny and monitoring programs
+3. **Female Driver Segment**: Severity-focused safety equipment incentives
+4. **Mid-career Male Segment**: Targeted risk management and behavioral modification programs
+
+### 📚 Academic Validation
+
+These findings are supported by peer-reviewed research:
+- Insurance Institute for Highway Safety (IIHS): Fatality Facts 2022
+- PubMed: Crash involvement rates by driver gender and average annual mileage
+- PMC: Sex differences in crash and crash-related injury outcomes
+- Academic literature confirming female vulnerability to severe injuries in comparable crashes
 
 ## 🔬 Technical Architecture
 
@@ -313,18 +325,16 @@ Analysis of 1,586 complete records revealed significant demographic risk variati
 ### API Integration
 
 ```python
-from transformers import AutoModel, AutoTokenizer
-import requests
+from sentence_transformers import SentenceTransformer
 
 # Load fine-tuned model
-model = AutoModel.from_pretrained("ConsulStat/INSURANCE_embedder_gpt2_small")
-tokenizer = AutoTokenizer.from_pretrained("ConsulStat/INSURANCE_embedder_gpt2_small")
+model = SentenceTransformer("ConsulStat/INSURANCE_embedder_gpt2_small")
 
-# Risk assessment API
+# Risk assessment function
 def assess_claim_risk(claim_text):
     embedding = model.encode(claim_text)
-    risk_score = calculate_risk_score(embedding)
-    return risk_score
+    # Apply your risk scoring logic here
+    return embedding
 ```
 
 ## 🤝 Contributing
