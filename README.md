@@ -200,12 +200,12 @@ Execute the complete analysis pipeline through these comprehensive notebooks. Ea
 #### 📥 **Data Collection & Processing**
 
 **🔗 0_DATA_SCRAPING_NMVCCS.ipynb** - *NMVCCS Crash Data Acquisition*
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/0_DATA_SCRAPING_NMVCCS.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://drive.google.com/file/d/1mxSAACxFBhgCOk8ay42bWoDT6Dm1seQs/view?usp=drive_link)
 
 Automated scraping toolkit for systematic download and processing of crash data from NHTSA NMVCCS database with robust error handling and data validation.
 
 **🔍 1_DATA_RETRIEVING.ipynb** - *Actuarial Field Extraction*
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/1_DATA_RETRIEVING.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://drive.google.com/file/d/1lmyFzG6c75C3UcFoDoyKlI7wthxn17WN/view?usp=drive_link)
 
 Advanced XML/HTML parsing engine for extracting 50+ structured actuarial variables per case with 99%+ success rate across all crash records.
 
@@ -214,12 +214,12 @@ Advanced XML/HTML parsing engine for extracting 50+ structured actuarial variabl
 #### 🤖 **NLP Model Development**
 
 **✨ 2_EMBEDDER_FT_TEXT_AUGMENTATION.ipynb** - *GPT-Powered Text Enhancement*
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/2_EMBEDDER_FT_TEXT_AUGMENTATION.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://drive.google.com/file/d/1dxmKxV34Af9E9UNU31H0WrvSuxH9-jw5/view?usp=drive_link)
 
 OpenAI GPT integration for generating diverse, realistic insurance claim narratives with concurrent processing and comprehensive progress tracking.
 
 **🧠 3_EMBEDDER_FT_MODEL_TRAIN.ipynb** - *Custom Embedding Model Training*
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/3_EMBEDDER_FT_MODEL_TRAIN.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://drive.google.com/file/d/1XCc_a-JTFt7bA6stYJ_XkSvkZ4wG6CJu/view?usp=drive_link)
 
 Fine-tuning domain-specific Sentence Transformer models with synthetic Q&A pairs, featuring GPU acceleration and comprehensive performance evaluation.
 
@@ -228,12 +228,12 @@ Fine-tuning domain-specific Sentence Transformer models with synthetic Q&A pairs
 #### 🔬 **Advanced Analytics & Risk Modeling**
 
 **🎯 4_BERTopic_FINE_TUNING.ipynb** - *Large-Scale Topic Modeling*
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/4_BERTopic_FINE_TUNING.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://drive.google.com/file/d/1nmIK4KIi_ei7Ko_CvkwySxdZiJxERoXe/view?usp=drive_link)
 
 GPU-accelerated BERTopic implementation using cuML UMAP/HDBSCAN for semantic pattern identification and risk factor extraction from unstructured data.
 
 **📈 5_LOSS_ACTUARIAL_ANALYSIS.ipynb** - *Comprehensive Risk Analysis*
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/5_LOSS_ACTUARIAL_ANALYSIS.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://drive.google.com/file/d/1CvSzLE5nRUhMh_vqrhbXReFZ-UbUvRGg/view?usp=drive_link)
 
 Complete demographic risk profiling, statistical validation, and strategic underwriting recommendations with actionable business intelligence.
 
