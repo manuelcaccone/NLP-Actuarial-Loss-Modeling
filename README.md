@@ -199,9 +199,9 @@ Explore our comprehensive actuarial risk analysis through an interactive dashboa
 The National Motor Vehicle Crash Causation Survey (NMVCCS) provides detailed crash investigation data used throughout this analysis:
 
 <div align="center">
-  <img src="data/raw/nmvccs/view_nmvccs_1.png" alt="NMVCCS Database Interface 1" width="45%" style="margin: 5px;">
+  <img src="data/raw/nmvccs_data/view_nmvccs_1.png" alt="NMVCCS Database Interface 1" width="45%" style="margin: 5px;">
   <br>
-  <img src="data/raw/nmvccs/view_nmvccs_2.png" alt="NMVCCS Database Interface 2" width="45%" style="margin: 5px;">
+  <img src="data/raw/nmvccs_data/view_nmvccs_2.png" alt="NMVCCS Database Interface 2" width="45%" style="margin: 5px;">
 </div>
 
 ### Data Access
