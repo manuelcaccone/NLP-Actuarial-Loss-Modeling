@@ -425,22 +425,6 @@ The analysis confirms findings from scientific literature: **males show higher c
 - Small sample sizes (n<100) require additional data collection before implementation
 - All adjustments subject to regulatory approval and competitive analysis
 
-#### Geographic and Behavioral Adjustments
-
-**Geographic Targeting:**
-- **High-intersection density areas**: Selective underwriting for risk reduction
-- **Rural vs. urban differentiation**: Tailored pricing strategies based on risk patterns
-
-**Behavioral Scoring:**
-- **Intersection navigation frequency**: Risk-based premium adjustments
-- **Advanced safety system usage**: Discount programs for crash prevention technology
-
-#### Portfolio Optimization Strategy
-
-1. **Young Driver Segment**: Potential for reduced penalties based on actual risk data
-2. **Senior Male Segment**: Enhanced underwriting scrutiny and monitoring programs
-3. **Female Driver Segment**: Severity-focused safety equipment incentives
-4. **Mid-career Male Segment**: Targeted risk management and behavioral modification programs
 
 ### 📚 Academic Validation
 
