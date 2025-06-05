@@ -1,9 +1,12 @@
 # Actuarial Risk Analysis using NLP and Crash Data
 
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-Model-yellow)](https://huggingface.co/ConsulStat/INSURANCE_embedder_gpt2_small)
 [![DOI](https://img.shields.io/badge/DOI-10.17632%2F992mh7dk9y.2-blue)](https://doi.org/10.17632/992mh7dk9y.2)
+[![NMVCCS Data](https://img.shields.io/badge/NHTSA-NMVCCS%20Database-red)](https://crashviewer.nhtsa.dot.gov/LegacyNMVCCS/Search)
+
 
 > A comprehensive actuarial risk analysis framework leveraging advanced Natural Language Processing (NLP) techniques on automotive crash data (NMVCCS) and insurance claims data, featuring fine-tuned embedding models and sophisticated topic modeling with BERTopic.
 
@@ -158,6 +161,14 @@ Explore our comprehensive actuarial risk analysis through an interactive dashboa
 
 **🚀 [Launch Interactive Dashboard](https://bit.ly/NLPdash)**
 
+<div align="center">
+  <a href="https://bit.ly/NLPdash">
+    <img src="bit.ly_NLPdash.png" alt="QR Code - Launch Dashboard" width="150" style="margin: 10px;">
+  </a>
+  <br>
+  <em>Scan QR Code to access dashboard on mobile</em>
+</div>
+
 ![Dashboard Demo](dashboard/dashboard_action.gif)
 
 ### Dashboard Features:
@@ -182,6 +193,16 @@ Explore our comprehensive actuarial risk analysis through an interactive dashboa
 | **NMVCCS Crash Data** | NHTSA | 6,949 cases | Comprehensive vehicle crash database |
 | **Insurance Claims** | Mendeley Data | 1,000 records | Structured insurance claim records |
 | **Augmented Narratives** | Generated | 2,769 texts | GPT-enhanced claim descriptions |
+
+### NMVCCS Database Interface
+
+The National Motor Vehicle Crash Causation Survey (NMVCCS) provides detailed crash investigation data used throughout this analysis:
+
+<div align="center">
+  <img src="data/raw/nmvccs/view_nmvccs_1.png" alt="NMVCCS Database Interface 1" width="45%" style="margin: 5px;">
+  <br>
+  <img src="data/raw/nmvccs/view_nmvccs_2.png" alt="NMVCCS Database Interface 2" width="45%" style="margin: 5px;">
+</div>
 
 ### Data Access
 
@@ -375,10 +396,14 @@ The analysis confirms findings from scientific literature: **males show higher c
 ### 📚 Academic Validation
 
 These findings are supported by peer-reviewed research:
-- Insurance Institute for Highway Safety (IIHS): Fatality Facts 2022
-- PubMed: Crash involvement rates by driver gender and average annual mileage
-- PMC: Sex differences in crash and crash-related injury outcomes
-- Academic literature confirming female vulnerability to severe injuries in comparable crashes
+
+• **Insurance Institute for Highway Safety (IIHS)**: [Fatality Facts 2022: Males and females](https://www.iihs.org/topics/fatality-statistics/detail/males-and-females)
+
+• **PubMed**: [Crash involvement rates by driver gender and the role of average annual mileage](https://pubmed.ncbi.nlm.nih.gov/9316715/)
+
+• **PMC**: [Are there sex differences in crash and crash-related injury between men and women? A 13-year cohort study](https://pmc.ncbi.nlm.nih.gov/articles/PMC8141461/)
+
+• **PubMed**: [Vulnerability of female drivers involved in motor vehicle crashes](https://pubmed.ncbi.nlm.nih.gov/22021321/)
 
 ## 🔬 Technical Architecture
 
