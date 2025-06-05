@@ -147,7 +147,6 @@ HF_TOKEN=your_huggingface_token_here
 HF_ORGANIZATION=ConsulStat
 ```
 
-
 ## 📊 Interactive Dashboard
 
 ### 🎯 Live Results Dashboard
@@ -157,7 +156,9 @@ Explore our comprehensive actuarial risk analysis through an interactive dashboa
 - **Topic Modeling Results with BERTopic**
 - **Premium Adjustment Recommendations**
 
-**🚀 [Launch Interactive Dashboard](https://manuel.caccone.github.io/NLP-Actuarial-Loss-Modeling/dashboard.html)**
+**🚀 [Launch Interactive Dashboard](https://bit.ly/NLPdash)**
+
+![Dashboard Demo](dashboard/dashboard_action.gif)
 
 ### Dashboard Features:
 - **Risk Score Heatmaps** by demographic segments
@@ -171,9 +172,6 @@ Explore our comprehensive actuarial risk analysis through an interactive dashboa
 - **Data Sources**: NMVCCS crash data + Insurance claims analysis
 - **Update Frequency**: Real-time model predictions
 - **Browser Compatibility**: Chrome, Firefox, Safari, Edge
-
-![Dashboard Preview](docs/assets/images/dashboard-preview.png)
-
 
 ## 📊 Data Sources
 
@@ -193,16 +191,66 @@ Explore our comprehensive actuarial risk analysis through an interactive dashboa
 
 ## 🎯 Usage Guide
 
-### Jupyter Notebooks
+### 📓 Interactive Jupyter Notebooks
 
-Execute the analysis pipeline through these interactive notebooks:
+Execute the complete analysis pipeline through these comprehensive notebooks. Each notebook is designed to be self-contained and can be run independently:
 
-1. **0_DATA_SCRAPING_NMVCCS.ipynb**: NMVCCS crash data scraping and initial processing
-2. **1_DATA_RETRIEVING.ipynb**: Actuarial field extraction from XML/HTML files
-3. **2_EMBEDDER_FT_TEXT_AUGMENTATION.ipynb**: GPT-powered text augmentation for insurance claims
-4. **3_EMBEDDER_FT_MODEL_TRAIN.ipynb**: Embedding model fine-tuning and evaluation
-5. **4_BERTopic_FINE_TUNING.ipynb**: Large-scale topic modeling with BERTopic
-6. **5_LOSS_ACTUARIAL_ANALYSIS.ipynb**: Demographic risk analysis and strategic insights
+---
+
+#### 📥 **Data Collection & Processing**
+
+**🔗 0_DATA_SCRAPING_NMVCCS.ipynb** - *NMVCCS Crash Data Acquisition*
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/0_DATA_SCRAPING_NMVCCS.ipynb)
+
+Automated scraping toolkit for systematic download and processing of crash data from NHTSA NMVCCS database with robust error handling and data validation.
+
+**🔍 1_DATA_RETRIEVING.ipynb** - *Actuarial Field Extraction*
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/1_DATA_RETRIEVING.ipynb)
+
+Advanced XML/HTML parsing engine for extracting 50+ structured actuarial variables per case with 99%+ success rate across all crash records.
+
+---
+
+#### 🤖 **NLP Model Development**
+
+**✨ 2_EMBEDDER_FT_TEXT_AUGMENTATION.ipynb** - *GPT-Powered Text Enhancement*
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/2_EMBEDDER_FT_TEXT_AUGMENTATION.ipynb)
+
+OpenAI GPT integration for generating diverse, realistic insurance claim narratives with concurrent processing and comprehensive progress tracking.
+
+**🧠 3_EMBEDDER_FT_MODEL_TRAIN.ipynb** - *Custom Embedding Model Training*
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/3_EMBEDDER_FT_MODEL_TRAIN.ipynb)
+
+Fine-tuning domain-specific Sentence Transformer models with synthetic Q&A pairs, featuring GPU acceleration and comprehensive performance evaluation.
+
+---
+
+#### 🔬 **Advanced Analytics & Risk Modeling**
+
+**🎯 4_BERTopic_FINE_TUNING.ipynb** - *Large-Scale Topic Modeling*
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/4_BERTopic_FINE_TUNING.ipynb)
+
+GPU-accelerated BERTopic implementation using cuML UMAP/HDBSCAN for semantic pattern identification and risk factor extraction from unstructured data.
+
+**📈 5_LOSS_ACTUARIAL_ANALYSIS.ipynb** - *Comprehensive Risk Analysis*
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/manuel.caccone/NLP-Actuarial-Loss-Modeling/blob/main/5_LOSS_ACTUARIAL_ANALYSIS.ipynb)
+
+Complete demographic risk profiling, statistical validation, and strategic underwriting recommendations with actionable business intelligence.
+
+---
+
+### 🚀 **Quick Start Recommendations**
+
+- **🆕 New to the Project?** Start with `0_DATA_SCRAPING_NMVCCS.ipynb` to understand the data foundation
+- **💼 Business Focus?** Jump directly to `5_LOSS_ACTUARIAL_ANALYSIS.ipynb` for insights and recommendations  
+- **🤖 ML/NLP Interest?** Begin with `3_EMBEDDER_FT_MODEL_TRAIN.ipynb` for model development
+- **📊 Analytics Focus?** Explore `4_BERTopic_FINE_TUNING.ipynb` for advanced topic modeling
+
+### 💡 **Execution Tips**
+- Each notebook includes detailed markdown explanations and step-by-step guidance
+- GPU acceleration recommended for notebooks 3, 4, and 5
+- Estimated runtime: 2-4 hours per notebook depending on hardware
+- All notebooks include progress bars and checkpoint saving functionality
 
 ## 📈 Results & Actuarial Insights
 

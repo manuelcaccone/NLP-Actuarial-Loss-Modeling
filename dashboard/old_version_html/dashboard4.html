@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Crash Reconstruction Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        .panel {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #333;
+        }
+        
+        .controls {
+            top: 20px;
+            left: 20px;
+            width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .info {
+            top: 20px;
+            right: 20px;
+            width: 350px;
+        }
+        
+        .timeline {
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 120px;
+        }
+        
+        .pattern-btn {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 10px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: left;
+        }
+        
+        .pattern-btn:hover {
+            background: #555;
+        }
+        
+        .pattern-btn.active {
+            background: #ff4500;
+        }
+        
+        .play-btn {
+            padding: 10px 20px;
+            background: #ffd700;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">Loading 3D Dashboard...</div>
+    
+    <div class="panel controls">
+        <h3>Gender Risk Patterns</h3>
+        <div id="pattern-list"></div>
+        
+        <h4>Filter by Gender</h4>
+        <button class="pattern-btn" onclick="filterGender('all')">All Patterns</button>
+        <button class="pattern-btn" onclick="filterGender('male')">👨 Male Patterns</button>
+        <button class="pattern-btn" onclick="filterGender('female')">👩 Female Patterns</button>
+    </div>
+    
+    <div class="panel info">
+        <h3>Pattern Analysis</h3>
+        <div id="pattern-info">
+            <p>Select a crash pattern to view detailed analysis and 3D reconstruction.</p>
+            <h4>Research Findings:</h4>
+            <ul>
+                <li><strong>Males:</strong> Higher frequency, more risky behaviors</li>
+                <li><strong>Females:</strong> Higher severity when crashes occur</li>
+                <li>Patterns identified through keyword analysis</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="panel timeline">
+        <h4>Crash Timeline</h4>
+        <div id="timeline-content">Select a pattern to view reconstruction steps</div>
+        <button class="play-btn" id="play-btn" onclick="togglePlay()">▶ Play</button>
+        <input type="range" class="slider" id="timeline-slider" min="0" max="100" value="0" oninput="onSliderChange()">
+    </div>
+    
+    <div id="canvas-container"></div>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer;
+        let vehicles = {};
+        let currentPattern = null;
+        let currentStep = 0;
+        let isPlaying = false;
+        let animationTimer = null;
+
+        // Crash patterns with real research data
+        const patterns = {
+            'intersection-complexity': {
+                name: 'Intersection Complexity',
+                gender: 'male',
+                riskScore: 2.15,
+                cases: 40,
+                frequency: 'High',
+                description: 'Higher risk propensity in complex traffic scenarios',
+                keywords: ['v2', 'v1', 'intersection', 'vehicle', 'lane', 'critical'],
+                steps: [
+                    {
+                        desc: 'V2 approaches intersection with excessive speed, V1 waiting',
+                        vehicles: [
+                            {id: 'v1', x: -2, z: -8, color: 0x00ff00},
+                            {id: 'v2', x: -15, z: 2, color: 0xff0000}
+                        ]
+                    },
+                    {
+                        desc: 'V2 ignores right-of-way, complex traffic scenario',
+                        vehicles: [
+                            {id: 'v1', x: -1, z: -4, color: 0x00ff00},
+                            {id: 'v2', x: -8, z: 1, color: 0xff6600}
+                        ]
+                    },
+                    {
+                        desc: 'V1 enters intersection, V2 continues without stopping',
+                        vehicles: [
+                            {id: 'v1', x: 0, z: -1, color: 0x00ff00},
+                            {id: 'v2', x: -4, z: 0, color: 0xff0000}
+                        ]
+                    },
+                    {
+                        desc: 'Critical moment: V2 enters intersection without right-of-way',
+                        vehicles: [
+                            {id: 'v1', x: 1, z: 1, color: 0xffff00},
+                            {id: 'v2', x: -1, z: -1, color: 0xff0000}
+                        ]
+                    },
+                    {
+                        desc: 'T-bone collision - typical male pattern',
+                        vehicles: [
+                            {id: 'v1', x: 2, z: 2, color: 0x800000},
+                            {id: 'v2', x: 1, z: 0, color: 0x800000}
+                        ]
+                    }
+                ]
+            },
+            
+            'road-right': {
+                name: 'Road-Right Pattern',
+                gender: 'male',
+                riskScore: 1.73,
+                cases: 133,
+                frequency: 'Very High',
+                description: 'Problems with direction changes and curve navigation',
+                keywords: ['road', 'right', 'v1', 'vehicle', 'driver'],
+                steps: [
+                    {
+                        desc: 'V1 approaches right curve with excessive speed',
+                        vehicles: [{id: 'v1', x: -15, z: -6, color: 0x0000ff}]
+                    },
+                    {
+                        desc: 'Driver underestimates curve difficulty',
+                        vehicles: [{id: 'v1', x: -8, z: -4, color: 0xff6600}]
+                    },
+                    {
+                        desc: 'Vehicle too fast for curve - losing control',
+                        vehicles: [{id: 'v1', x: -2, z: -1, color: 0xff0000}]
+                    },
+                    {
+                        desc: 'Complete loss of control in curve',
+                        vehicles: [{id: 'v1', x: 3, z: 2, color: 0xff0000}]
+                    },
+                    {
+                        desc: 'Vehicle leaves roadway - crash',
+                        vehicles: [{id: 'v1', x: 8, z: 6, color: 0x800000}]
+                    }
+                ]
+            },
+            
+            'vehicle-lane': {
+                name: 'Vehicle-Lane Pattern',
+                gender: 'male',
+                riskScore: 1.70,
+                cases: 327,
+                frequency: 'Very High',
+                description: 'Lane management and vehicle interaction problems',
+                keywords: ['vehicle', 'v1', 'driver', 'lane', 'v2', 'crash'],
+                steps: [
+                    {
+                        desc: 'V1 and V2 in adjacent lanes, V1 not checking mirrors',
+                        vehicles: [
+                            {id: 'v1', x: -12, z: -3, color: 0x0000ff},
+                            {id: 'v2', x: -15, z: 3, color: 0x00ff00}
+                        ]
+                    },
+                    {
+                        desc: 'V1 sudden lane change, inadequate management',
+                        vehicles: [
+                            {id: 'v1', x: -8, z: -1, color: 0xff6600},
+                            {id: 'v2', x: -10, z: 3, color: 0x00ff00}
+                        ]
+                    },
+                    {
+                        desc: 'Critical interaction - V1 invades V2 lane',
+                        vehicles: [
+                            {id: 'v1', x: -4, z: 1, color: 0xff0000},
+                            {id: 'v2', x: -5, z: 2.5, color: 0xffff00}
+                        ]
+                    },
+                    {
+                        desc: 'V2 brakes hard but cannot avoid collision',
+                        vehicles: [
+                            {id: 'v1', x: 0, z: 1.5, color: 0xff0000},
+                            {id: 'v2', x: -1, z: 2, color: 0xff0000}
+                        ]
+                    },
+                    {
+                        desc: 'Side collision - typical male pattern',
+                        vehicles: [
+                            {id: 'v1', x: 3, z: 2, color: 0x800000},
+                            {id: 'v2', x: 2, z: 2.5, color: 0x800000}
+                        ]
+                    }
+                ]
+            },
+            
+            'vehicle-driver-critical': {
+                name: 'Vehicle-Driver Critical',
+                gender: 'female',
+                riskScore: 2.42,
+                cases: 19,
+                frequency: 'Medium',
+                description: 'When females crash, severity tends to be higher',
+                keywords: ['vehicle', 'driver', 'v2', 'v1', 'lane', 'critical'],
+                steps: [
+                    {
+                        desc: 'Female driver in normal traffic, adequate distance',
+                        vehicles: [
+                            {id: 'v1', x: -15, z: 0, color: 0x0000ff},
+                            {id: 'v2', x: -5, z: 0, color: 0x00ff00}
+                        ]
+                    },
+                    {
+                        desc: 'V2 slows suddenly, driver does not notice immediately',
+                        vehicles: [
+                            {id: 'v1', x: -10, z: 0, color: 0xffaa00},
+                            {id: 'v2', x: -2, z: 0, color: 0xffff00}
+                        ]
+                    },
+                    {
+                        desc: 'Driver notices danger late, delayed reaction',
+                        vehicles: [
+                            {id: 'v1', x: -6, z: 0, color: 0xff6600},
+                            {id: 'v2', x: 0, z: 0, color: 0x666666}
+                        ]
+                    },
+                    {
+                        desc: 'Emergency braking but insufficient space',
+                        vehicles: [
+                            {id: 'v1', x: -2, z: 0, color: 0xff0000},
+                            {id: 'v2', x: 1, z: 0, color: 0x666666}
+                        ]
+                    },
+                    {
+                        desc: 'High severity rear-end collision - female pattern',
+                        vehicles: [
+                            {id: 'v1', x: 1, z: 0, color: 0x400000},
+                            {id: 'v2', x: 3, z: 0, color: 0x400000}
+                        ]
+                    }
+                ]
+            },
+            
+            'intersection-secondary': {
+                name: 'Intersection Secondary',
+                gender: 'female',
+                riskScore: 1.82,
+                cases: 22,
+                frequency: 'Medium',
+                description: 'Similar intersection challenges but different dynamics',
+                keywords: ['v2', 'v1', 'intersection', 'vehicle', 'lane'],
+                steps: [
+                    {
+                        desc: 'Female driver approaches intersection cautiously',
+                        vehicles: [
+                            {id: 'v1', x: -8, z: -2, color: 0x4488ff},
+                            {id: 'v2', x: 2, z: -12, color: 0x00ff00}
+                        ]
+                    },
+                    {
+                        desc: 'V1 evaluates situation, V2 accelerates',
+                        vehicles: [
+                            {id: 'v1', x: -4, z: -1, color: 0x4488ff},
+                            {id: 'v2', x: 1, z: -6, color: 0xff6600}
+                        ]
+                    },
+                    {
+                        desc: 'V1 enters intersection, V2 does not slow enough',
+                        vehicles: [
+                            {id: 'v1', x: -1, z: 0, color: 0x4488ff},
+                            {id: 'v2', x: 0, z: -2, color: 0xff0000}
+                        ]
+                    },
+                    {
+                        desc: 'Critical situation: both vehicles in intersection',
+                        vehicles: [
+                            {id: 'v1', x: 1, z: 1, color: 0xffff00},
+                            {id: 'v2', x: -1, z: 0, color: 0xff0000}
+                        ]
+                    },
+                    {
+                        desc: 'High severity collision for female driver',
+                        vehicles: [
+                            {id: 'v1', x: 2, z: 2, color: 0x400000},
+                            {id: 'v2', x: 0, z: 1, color: 0x800000}
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // Initialize Three.js
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x001122);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(20, 15, 20);
+            camera.lookAt(0, 0, 0);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(50, 50, 50);
+            scene.add(directionalLight);
+
+            // Create road
+            const roadGeometry = new THREE.PlaneGeometry(100, 30);
+            const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const road = new THREE.Mesh(roadGeometry, roadMaterial);
+            road.rotation.x = -Math.PI / 2;
+            scene.add(road);
+
+            // Create lane markings
+            for (let i = -40; i <= 40; i += 8) {
+                const marking = new THREE.Mesh(
+                    new THREE.BoxGeometry(4, 0.1, 0.2),
+                    new THREE.MeshBasicMaterial({ color: 0xffffff })
+                );
+                marking.position.set(i, 0.05, 0);
+                scene.add(marking);
+            }
+
+            // Create UI
+            createPatternButtons();
+            
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+
+            // Start animation loop
+            animate();
+        }
+
+        function createPatternButtons() {
+            const container = document.getElementById('pattern-list');
+            container.innerHTML = '';
+            
+            Object.keys(patterns).forEach(key => {
+                const pattern = patterns[key];
+                const button = document.createElement('button');
+                button.className = 'pattern-btn';
+                button.innerHTML = `
+                    <strong>${pattern.gender === 'male' ? '👨' : '👩'} ${pattern.name}</strong><br>
+                    <small>Risk: ${pattern.riskScore} | Cases: ${pattern.cases}</small>
+                `;
+                button.onclick = () => selectPattern(key);
+                button.dataset.gender = pattern.gender;
+                container.appendChild(button);
+            });
+        }
+
+        function selectPattern(patternKey) {
+            // Update button states
+            document.querySelectorAll('.pattern-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Load pattern
+            currentPattern = patterns[patternKey];
+            currentStep = 0;
+            isPlaying = false;
+            
+            // Clear existing vehicles
+            Object.values(vehicles).forEach(vehicle => {
+                scene.remove(vehicle);
+            });
+            vehicles = {};
+            
+            // Update info panel
+            updateInfoPanel();
+            
+            // Load first step
+            loadStep(0);
+            
+            // Update timeline
+            updateTimeline();
+            
+            // Reset controls
+            document.getElementById('play-btn').textContent = '▶ Play';
+            document.getElementById('timeline-slider').value = 0;
+        }
+
+        function updateInfoPanel() {
+            const info = document.getElementById('pattern-info');
+            const pattern = currentPattern;
+            
+            info.innerHTML = `
+                <h4>${pattern.name}</h4>
+                <p><strong>Target:</strong> ${pattern.gender === 'male' ? 'Male Drivers' : 'Female Drivers'}</p>
+                <p><strong>Description:</strong> ${pattern.description}</p>
+                <p><strong>Risk Score:</strong> ${pattern.riskScore} | <strong>Cases:</strong> ${pattern.cases}</p>
+                <p><strong>Frequency:</strong> ${pattern.frequency}</p>
+                <p><strong>Keywords:</strong> ${pattern.keywords.join(', ')}</p>
+                <hr>
+                <p><strong>Current Step:</strong> ${currentStep + 1}/${pattern.steps.length}</p>
+                <p>${pattern.steps[currentStep].desc}</p>
+            `;
+        }
+
+        function updateTimeline() {
+            const content = document.getElementById('timeline-content');
+            if (!currentPattern) return;
+            
+            content.innerHTML = '';
+            currentPattern.steps.forEach((step, index) => {
+                const div = document.createElement('div');
+                div.style.cssText = `
+                    padding: 5px;
+                    margin: 2px 0;
+                    background: ${index === currentStep ? '#ff4500' : '#444'};
+                    border-radius: 3px;
+                    cursor: pointer;
+                    font-size: 12px;
+                `;
+                div.innerHTML = `${index + 1}. ${step.desc}`;
+                div.onclick = () => jumpToStep(index);
+                content.appendChild(div);
+            });
+        }
+
+        function loadStep(stepIndex) {
+            if (!currentPattern || stepIndex < 0 || stepIndex >= currentPattern.steps.length) return;
+            
+            currentStep = stepIndex;
+            const step = currentPattern.steps[stepIndex];
+            
+            // Clear existing vehicles
+            Object.values(vehicles).forEach(vehicle => {
+                scene.remove(vehicle);
+            });
+            vehicles = {};
+            
+            // Create vehicles for this step
+            step.vehicles.forEach(vehicleData => {
+                const vehicle = createVehicle(vehicleData.id, vehicleData.color);
+                vehicle.position.set(vehicleData.x, 0, vehicleData.z);
+                vehicles[vehicleData.id] = vehicle;
+            });
+            
+            updateInfoPanel();
+            updateTimeline();
+        }
+
+        function createVehicle(id, color) {
+            const group = new THREE.Group();
+            
+            // Car body
+            const bodyGeometry = new THREE.BoxGeometry(4, 1.5, 1.8);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: color });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.75;
+            group.add(body);
+            
+            // Wheels
+            const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2);
+            const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+            
+            [[-1.5, 0.3, -0.8], [-1.5, 0.3, 0.8], [1.5, 0.3, -0.8], [1.5, 0.3, 0.8]].forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                wheel.position.set(pos[0], pos[1], pos[2]);
+                wheel.rotation.z = Math.PI / 2;
+                group.add(wheel);
+            });
+            
+            scene.add(group);
+            return group;
+        }
+
+        function jumpToStep(stepIndex) {
+            if (!currentPattern) return;
+            loadStep(stepIndex);
+            document.getElementById('timeline-slider').value = (stepIndex / (currentPattern.steps.length - 1)) * 100;
+        }
+
+        function togglePlay() {
+            if (!currentPattern) return;
+            
+            isPlaying = !isPlaying;
+            const btn = document.getElementById('play-btn');
+            btn.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+            
+            if (isPlaying) {
+                playAnimation();
+            } else {
+                clearTimeout(animationTimer);
+            }
+        }
+
+        function playAnimation() {
+            if (!isPlaying || !currentPattern) return;
+            
+            const nextStep = (currentStep + 1) % currentPattern.steps.length;
+            loadStep(nextStep);
+            document.getElementById('timeline-slider').value = (nextStep / (currentPattern.steps.length - 1)) * 100;
+            
+            animationTimer = setTimeout(playAnimation, 2000);
+        }
+
+        function onSliderChange() {
+            if (!currentPattern) return;
+            const value = document.getElementById('timeline-slider').value;
+            const stepIndex = Math.round((value / 100) * (currentPattern.steps.length - 1));
+            loadStep(stepIndex);
+        }
+
+        function filterGender(gender) {
+            document.querySelectorAll('#pattern-list .pattern-btn').forEach(btn => {
+                if (gender === 'all' || btn.dataset.gender === gender) {
+                    btn.style.display = 'block';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Rotate camera around scene
+            const time = Date.now() * 0.0005;
+            camera.position.x = Math.cos(time) * 30;
+            camera.position.z = Math.sin(time) * 30;
+            camera.lookAt(0, 0, 0);
+            
+            renderer.render(scene, camera);
+        }
+
+        // Window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Crash Scene Reconstruction Dashboard</title>
+    
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: white;
+            overflow: hidden;
+        }
+
+        .dashboard-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .controls-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 1000;
+            min-width: 320px;
+            max-width: 380px;
+            border: 1px solid rgba(255, 69, 0, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+        }
+
+        .scenario-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 1000;
+            min-width: 350px;
+            max-width: 420px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+        }
+
+        .timeline-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 1000;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            max-height: 180px;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #ff4500, #ff6b35);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .scenario-title {
+            background: linear-gradient(135deg, #00d4ff, #0088cc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .timeline-title {
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #ff6b35;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pattern-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .pattern-btn {
+            padding: 10px 12px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 69, 0, 0.08);
+            color: white;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 69, 0, 0.2);
+            text-align: left;
+        }
+
+        .pattern-btn:hover {
+            background: rgba(255, 69, 0, 0.15);
+            border-color: #ff4500;
+            transform: translateY(-1px);
+        }
+
+        .pattern-btn.active {
+            background: linear-gradient(135deg, #ff4500, #ff6b35);
+            border-color: #ff4500;
+            box-shadow: 0 3px 15px rgba(255, 69, 0, 0.4);
+        }
+
+        .demographic-filters {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .demo-btn {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            cursor: pointer;
+            font-size: 9px;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            font-weight: 500;
+        }
+
+        .demo-btn:hover {
+            background: rgba(0, 212, 255, 0.15);
+            border-color: #00d4ff;
+        }
+
+        .demo-btn.active {
+            background: linear-gradient(135deg, #00d4ff, #0088cc);
+            border-color: #00d4ff;
+        }
+
+        .scenario-details {
+            background: rgba(0, 212, 255, 0.08);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-left: 3px solid #00d4ff;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .scenario-step {
+            margin-bottom: 8px;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 6px;
+            border-left: 2px solid #ffd700;
+            font-size: 10px;
+            line-height: 1.3;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .scenario-step:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .scenario-step.active {
+            background: rgba(255, 215, 0, 0.15);
+            border-left-color: #ffd700;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+        }
+
+        .step-number {
+            color: #ffd700;
+            font-weight: bold;
+            margin-right: 6px;
+        }
+
+        .timeline-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .play-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #1a1a2e;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            min-width: 80px;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 3px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .timeline-slider {
+            flex: 1;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+        }
+
+        .timeline-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+        }
+
+        .speed-control {
+            color: #ffd700;
+            font-size: 11px;
+            min-width: 60px;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6b35;
+            font-size: 18px;
+            z-index: 2000;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255, 107, 53, 0.3);
+            border-top: 3px solid #ff6b35;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .risk-indicator {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-left: 6px;
+        }
+
+        .risk-high { background: #ff4444; color: white; }
+        .risk-medium { background: #ffaa44; color: black; }
+        .risk-low { background: #44ff88; color: black; }
+
+        .camera-controls {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 999;
+        }
+
+        .camera-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .camera-btn:hover {
+            background: rgba(255, 69, 0, 0.8);
+            transform: scale(1.1);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 1px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ffb347);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Loading Screen -->
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            Loading 3D Crash Reconstruction...
+        </div>
+        
+        <!-- Camera Controls -->
+        <div class="camera-controls">
+            <button class="camera-btn" id="resetCamera" title="Reset View">🔄</button>
+            <button class="camera-btn" id="topView" title="Top View">⬇️</button>
+            <button class="camera-btn" id="sideView" title="Side View">↗️</button>
+            <button class="camera-btn" id="autoRotate" title="Auto Rotate">🔄</button>
+        </div>
+        
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <div class="panel-title">🚗 Crash Pattern Selection</div>
+            
+            <div class="control-group">
+                <label>Select Incident Pattern</label>
+                <div class="pattern-buttons" id="pattern-buttons">
+                    <!-- Buttons generated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Demographic Filter</label>
+                <div class="demographic-filters" id="demographic-filters">
+                    <button class="demo-btn active" data-demo="all">All</button>
+                    <button class="demo-btn" data-demo="young-male">Young Male</button>
+                    <button class="demo-btn" data-demo="senior-male">Senior Male</button>
+                    <button class="demo-btn" data-demo="female">Female</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scenario Panel -->
+        <div class="scenario-panel">
+            <div class="panel-title scenario-title">📋 Incident Analysis</div>
+            <div id="scenario-content">
+                <div class="scenario-details">
+                    <h4>Welcome to 3D Crash Reconstruction</h4>
+                    <p>Select a crash pattern from the left panel to begin analyzing accident scenarios in 3D.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Panel -->
+        <div class="timeline-panel">
+            <div class="panel-title timeline-title">⏱️ Incident Timeline</div>
+            <div id="timeline-steps">Select a crash pattern to view reconstruction</div>
+            <div class="timeline-controls">
+                <button class="play-btn" id="play-btn">▶ Play</button>
+                <input type="range" class="timeline-slider" id="timeline-slider" min="0" max="100" value="0">
+                <div class="speed-control">Speed: <span id="speed-display">1.0x</span></div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- 3D Canvas Container -->
+        <div id="canvas-container"></div>
+    </div>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer;
+        let vehicles = {};
+        let currentPattern = null;
+        let currentStep = 0;
+        let isPlaying = false;
+        let animationSpeed = 1.0;
+        let cameraMode = 'default';
+        let autoRotateEnabled = false;
+
+        // Crash patterns data
+        const crashPatterns = {
+            'vehicle-lane-critical': {
+                name: 'Vehicle-Lane Critical',
+                description: 'Lane management failure leading to multi-vehicle collision',
+                riskScore: 1.70,
+                frequency: 'Very High',
+                demographics: ['young-male', 'all'],
+                steps: [
+                    { 
+                        time: 0, 
+                        description: 'Vehicle 1 in left lane, Vehicle 2 approaching faster in right lane', 
+                        vehicles: [
+                            {id: 'v1', x: -15, z: -3, speed: 1.0, rotation: 0}, 
+                            {id: 'v2', x: -20, z: 3, speed: 1.3, rotation: 0}
+                        ] 
+                    },
+                    { 
+                        time: 1, 
+                        description: 'Both vehicles advancing, V2 gaining on V1', 
+                        vehicles: [
+                            {id: 'v1', x: -10, z: -3}, 
+                            {id: 'v2', x: -12, z: 3, speed: 1.3}
+                        ] 
+                    },
+                    { 
+                        time: 2, 
+                        description: 'V1 begins sudden lane change without checking blind spot', 
+                        vehicles: [
+                            {id: 'v1', x: -5, z: -1, changing: true, rotation: 10}, 
+                            {id: 'v2', x: -4, z: 3, speed: 1.3}
+                        ] 
+                    },
+                    { 
+                        time: 3, 
+                        description: 'Critical moment - V1 moves into V2 path, V2 brakes hard', 
+                        vehicles: [
+                            {id: 'v1', x: -1, z: 1, changing: true, rotation: 20}, 
+                            {id: 'v2', x: 0, z: 2.5, braking: true, emergency_brake: true}
+                        ] 
+                    },
+                    { 
+                        time: 4, 
+                        description: 'Side-impact collision as V2 cannot avoid V1', 
+                        vehicles: [
+                            {id: 'v1', x: 2, z: 2, damaged: true, rotation: 25}, 
+                            {id: 'v2', x: 3, z: 2.5, damaged: true, rotation: -15}
+                        ] 
+                    }
+                ]
+            },
+            
+            'intersection-complexity': {
+                name: 'Intersection Complexity',
+                description: 'Complex intersection with right-of-way violation',
+                riskScore: 2.15,
+                frequency: 'High',
+                demographics: ['senior-male', 'all'],
+                steps: [
+                    { 
+                        time: 0, 
+                        description: 'V1 approaches intersection from south, V2 from west', 
+                        vehicles: [
+                            {id: 'v1', x: 0, z: -15, rotation: 0}, 
+                            {id: 'v2', x: -15, z: 0, rotation: 90}
+                        ] 
+                    },
+                    { 
+                        time: 1, 
+                        description: 'Both vehicles approach intersection simultaneously', 
+                        vehicles: [
+                            {id: 'v1', x: 0, z: -8}, 
+                            {id: 'v2', x: -8, z: 0}
+                        ] 
+                    },
+                    { 
+                        time: 2, 
+                        description: 'V1 enters intersection assuming right-of-way', 
+                        vehicles: [
+                            {id: 'v1', x: 0, z: -2}, 
+                            {id: 'v2', x: -4, z: 0, turning: true}
+                        ] 
+                    },
+                    { 
+                        time: 3, 
+                        description: 'V2 runs stop sign and begins left turn into V1 path', 
+                        vehicles: [
+                            {id: 'v1', x: 0, z: 1}, 
+                            {id: 'v2', x: -1, z: -1, turning: true, rotation: 45}
+                        ] 
+                    },
+                    { 
+                        time: 4, 
+                        description: 'T-bone collision in intersection center', 
+                        vehicles: [
+                            {id: 'v1', x: 0, z: 2, damaged: true, rotation: 15}, 
+                            {id: 'v2', x: 1, z: 0, damaged: true, rotation: 60}
+                        ] 
+                    }
+                ]
+            }
+        };
+
+        // Initialize Three.js
+        function init() {
+            try {
+                console.log('Initializing 3D crash reconstruction...');
+                
+                setupThreeJS();
+                setupLighting();
+                createEnvironment();
+                setupUI();
+                setupEventListeners();
+                
+                document.getElementById('loading').style.display = 'none';
+                console.log('Initialization complete');
+                animate();
+                
+            } catch (error) {
+                console.error('Init failed:', error);
+                showError('Failed to initialize: ' + error.message);
+            }
+        }
+
+        function setupThreeJS() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x001122, 30, 150);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(20, 15, 20);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x001122, 1);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+        }
+
+        function setupLighting() {
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(30, 30, 20);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 1024;
+            directionalLight.shadow.mapSize.height = 1024;
+            directionalLight.shadow.camera.near = 1;
+            directionalLight.shadow.camera.far = 100;
+            directionalLight.shadow.camera.left = -30;
+            directionalLight.shadow.camera.right = 30;
+            directionalLight.shadow.camera.top = 30;
+            directionalLight.shadow.camera.bottom = -30;
+            scene.add(directionalLight);
+
+            const fillLight = new THREE.DirectionalLight(0x4488ff, 0.3);
+            fillLight.position.set(-30, 20, -20);
+            scene.add(fillLight);
+        }
+
+        function createEnvironment() {
+            // Road surface
+            const roadGeometry = new THREE.PlaneGeometry(80, 20);
+            const roadMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x2a2a2a,
+                transparent: true,
+                opacity: 0.9
+            });
+            const road = new THREE.Mesh(roadGeometry, roadMaterial);
+            road.rotation.x = -Math.PI / 2;
+            road.receiveShadow = true;
+            scene.add(road);
+
+            createLaneMarkings();
+            createRoadBoundaries();
+        }
+
+        function createLaneMarkings() {
+            const markingGeometry = new THREE.BoxGeometry(3, 0.02, 0.3);
+            const markingMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+            // Center line markings
+            for (let i = -30; i <= 30; i += 6) {
+                const marking = new THREE.Mesh(markingGeometry, markingMaterial);
+                marking.position.set(i, 0.01, 0);
+                scene.add(marking);
+            }
+
+            // Lane boundaries
+            [-7, 7].forEach(z => {
+                for (let i = -30; i <= 30; i += 6) {
+                    const marking = new THREE.Mesh(markingGeometry, markingMaterial);
+                    marking.position.set(i, 0.01, z);
+                    scene.add(marking);
+                }
+            });
+        }
+
+        function createRoadBoundaries() {
+            const barrierGeometry = new THREE.BoxGeometry(80, 0.8, 0.3);
+            const barrierMaterial = new THREE.MeshLambertMaterial({ color: 0x666666 });
+
+            [-12, 12].forEach(z => {
+                const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
+                barrier.position.set(0, 0.4, z);
+                barrier.castShadow = true;
+                scene.add(barrier);
+            });
+        }
+
+        function createVehicle(id, color = 0x2194ce) {
+            const vehicleGroup = new THREE.Group();
+
+            // Car body
+            const bodyGeometry = new THREE.BoxGeometry(4, 1.5, 1.8);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                color: color, 
+                shininess: 50,
+                specular: 0x111111
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.75;
+            body.castShadow = true;
+            vehicleGroup.add(body);
+
+            // Windshield
+            const windshieldGeometry = new THREE.BoxGeometry(2.5, 0.8, 1.6);
+            const windshieldMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x87ceeb, 
+                transparent: true, 
+                opacity: 0.6,
+                reflectivity: 0.8
+            });
+            const windshield = new THREE.Mesh(windshieldGeometry, windshieldMaterial);
+            windshield.position.set(0.5, 1.4, 0);
+            vehicleGroup.add(windshield);
+
+            // Wheels
+            const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.25);
+            const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+            
+            const wheelPositions = [[-1.2, 0.3, -1], [-1.2, 0.3, 1], [1.2, 0.3, -1], [1.2, 0.3, 1]];
+            wheelPositions.forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                wheel.position.set(...pos);
+                wheel.rotation.z = Math.PI / 2;
+                wheel.castShadow = true;
+                vehicleGroup.add(wheel);
+            });
+
+            // Brake lights
+            const brakeGeometry = new THREE.SphereGeometry(0.12);
+            const brakeMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff0000, 
+                transparent: true, 
+                opacity: 0.3 
+            });
+            
+            const leftBrake = new THREE.Mesh(brakeGeometry, brakeMaterial.clone());
+            leftBrake.position.set(-1.8, 0.7, -0.7);
+            vehicleGroup.add(leftBrake);
+
+            const rightBrake = new THREE.Mesh(brakeGeometry, brakeMaterial.clone());
+            rightBrake.position.set(-1.8, 0.7, 0.7);
+            vehicleGroup.add(rightBrake);
+
+            vehicleGroup.userData = { 
+                id, 
+                brakeLeft: leftBrake, 
+                brakeRight: rightBrake,
+                body, 
+                windshield, 
+                originalColor: color, 
+                isAnimating: false,
+                damageEffectCreated: false
+            };
+
+            scene.add(vehicleGroup);
+            vehicles[id] = vehicleGroup;
+            return vehicleGroup;
+        }
+
+        function setupUI() {
+            createPatternButtons();
+            updateScenarioPanel();
+        }
+
+        function createPatternButtons() {
+            const container = document.getElementById('pattern-buttons');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            Object.entries(crashPatterns).forEach(([key, pattern]) => {
+                const button = document.createElement('button');
+                button.className = 'pattern-btn';
+                button.dataset.pattern = key;
+                
+                const riskClass = pattern.riskScore > 2.0 ? 'risk-high' : 
+                                 pattern.riskScore > 1.6 ? 'risk-medium' : 'risk-low';
+                
+                button.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${pattern.name}</strong>
+                            <br><small style="opacity: 0.8;">${pattern.description}</small>
+                        </div>
+                        <span class="risk-indicator ${riskClass}">${pattern.riskScore}</span>
+                    </div>
+                `;
+                
+                button.addEventListener('click', () => selectPattern(key, button));
+                container.appendChild(button);
+            });
+        }
+
+        function selectPattern(patternKey, buttonElement) {
+            document.querySelectorAll('.pattern-btn').forEach(btn => btn.classList.remove('active'));
+            buttonElement.classList.add('active');
+            loadCrashPattern(patternKey);
+        }
+
+        function loadCrashPattern(patternKey) {
+            try {
+                console.log('Loading crash pattern:', patternKey);
+                
+                currentPattern = crashPatterns[patternKey];
+                currentStep = 0;
+                isPlaying = false;
+
+                clearVehicles();
+                updateScenarioPanel();
+                updateTimelinePanel();
+
+                // Create vehicles for this pattern
+                const uniqueVehicles = new Set();
+                currentPattern.steps.forEach(step => {
+                    step.vehicles.forEach(v => uniqueVehicles.add(v.id));
+                });
+
+                // Assign different colors to each vehicle
+                const colors = [0x2194ce, 0xff4444, 0x44ff44, 0xffaa44, 0x8844ff];
+                let colorIndex = 0;
+
+                uniqueVehicles.forEach(vehicleId => {
+                    createVehicle(vehicleId, colors[colorIndex % colors.length]);
+                    colorIndex++;
+                });
+
+                // Set initial positions
+                updateVehiclePositions(0, false);
+
+                // Reset controls
+                const timelineSlider = document.getElementById('timeline-slider');
+                const playBtn = document.getElementById('play-btn');
+                const progressFill = document.getElementById('progress-fill');
+                
+                if (timelineSlider) timelineSlider.value = 0;
+                if (playBtn) playBtn.textContent = '▶ Play';
+                if (progressFill) progressFill.style.width = '0%';
+
+                console.log('Pattern loaded successfully');
+
+            } catch (error) {
+                console.error('Error loading pattern:', error);
+                showError('Failed to load crash pattern: ' + error.message);
+            }
+        }
+
+        function clearVehicles() {
+            Object.values(vehicles).forEach(vehicle => {
+                scene.remove(vehicle);
+                vehicle.traverse(child => {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(material => material.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                });
+            });
+            vehicles = {};
+        }
+
+        function updateScenarioPanel() {
+            const content = document.getElementById('scenario-content');
+            if (!content) return;
+            
+            if (!currentPattern) {
+                content.innerHTML = `
+                    <div class="scenario-details">
+                        <h4>Select a pattern to view detailed crash reconstruction</h4>
+                        <p>Choose from the most common crash patterns to see a 3D reconstruction of the incident scenario.</p>
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(255, 215, 0, 0.1); border-radius: 8px; border-left: 3px solid #ffd700;">
+                            <p style="font-size: 10px; margin: 0;"><strong>Instructions:</strong></p>
+                            <ul style="font-size: 10px; margin: 5px 0 0 15px; padding: 0;">
+                                <li>Click any crash pattern button to begin</li>
+                                <li>Use Space bar to play/pause animations</li>
+                                <li>Arrow keys to navigate step by step</li>
+                                <li>Camera controls on the left side</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const pattern = currentPattern;
+            const riskClass = pattern.riskScore > 2.0 ? 'risk-high' : 
+                             pattern.riskScore > 1.6 ? 'risk-medium' : 'risk-low';
+            
+            content.innerHTML = `
+                <div class="scenario-details">
+                    <h4>${pattern.name}</h4>
+                    <p><strong>Description:</strong> ${pattern.description}</p>
+                    <p><strong>Risk Score:</strong> <span class="risk-indicator ${riskClass}">${pattern.riskScore}</span></p>
+                    <p><strong>Frequency:</strong> ${pattern.frequency}</p>
+                    <p><strong>Steps:</strong> ${pattern.steps.length} | <strong>Current:</strong> ${currentStep + 1}</p>
+                </div>
+                
+                <div style="background: rgba(255, 215, 0, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #ffd700;">
+                    <h5 style="margin: 0 0 8px 0; color: #ffd700;">🎬 Current Step</h5>
+                    <p style="margin: 0; font-size: 10px; line-height: 1.4;">
+                        ${pattern.steps[currentStep] ? pattern.steps[currentStep].description : 'Ready to start'}
+                    </p>
+                </div>
+            `;
+        }
+
+        function updateTimelinePanel() {
+            const timelineDiv = document.getElementById('timeline-steps');
+            if (!timelineDiv) return;
+            
+            if (!currentPattern) {
+                timelineDiv.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #999;">
+                        Select a crash pattern to view the step-by-step reconstruction
+                    </div>
+                `;
+                return;
+            }
+
+            const pattern = currentPattern;
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px; max-height: 80px; overflow-y: auto;">';
+            
+            pattern.steps.forEach((step, index) => {
+                const isActive = index === currentStep ? 'active' : '';
+                html += `
+                    <div class="scenario-step ${isActive}" data-step="${index}" onclick="jumpToStep(${index})">
+                        <span class="step-number">${index + 1}.</span>
+                        ${step.description}
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            timelineDiv.innerHTML = html;
+        }
+
+        function jumpToStep(stepIndex) {
+            if (!currentPattern || stepIndex < 0 || stepIndex >= currentPattern.steps.length) {
+                return;
+            }
+            
+            console.log('Jumping to step:', stepIndex);
+            
+            currentStep = stepIndex;
+            updateVehiclePositions(stepIndex, true);
+            
+            // Update slider and progress bar
+            const progress = stepIndex === 0 ? 0 : (stepIndex / (currentPattern.steps.length - 1)) * 100;
+            
+            const timelineSlider = document.getElementById('timeline-slider');
+            const progressFill = document.getElementById('progress-fill');
+            
+            if (timelineSlider) timelineSlider.value = progress;
+            if (progressFill) progressFill.style.width = progress + '%';
+            
+            updateScenarioPanel();
+            updateTimelinePanel();
+        }
+
+        function updateVehiclePositions(stepIndex, animate = true) {
+            if (!currentPattern || stepIndex < 0 || stepIndex >= currentPattern.steps.length) {
+                return;
+            }
+
+            const step = currentPattern.steps[stepIndex];
+            console.log(`Updating vehicles for step ${stepIndex}:`, step.description);
+            
+            document.querySelectorAll('.scenario-step').forEach((el, index) => {
+                el.classList.toggle('active', index === stepIndex);
+            });
+
+            step.vehicles.forEach(vehicleData => {
+                const vehicle = vehicles[vehicleData.id];
+                if (!vehicle) {
+                    console.warn(`Vehicle ${vehicleData.id} not found`);
+                    return;
+                }
+
+                const targetPosition = new THREE.Vector3(vehicleData.x, 0, vehicleData.z);
+                const targetRotation = (vehicleData.rotation || 0) * Math.PI / 180;
+
+                if (animate && !vehicle.userData.isAnimating) {
+                    animateVehicle(vehicle, targetPosition, targetRotation, vehicleData);
+                } else {
+                    vehicle.position.copy(targetPosition);
+                    vehicle.rotation.y = targetRotation;
+                    updateVehicleState(vehicle, vehicleData);
+                }
+            });
+        }
+
+        function animateVehicle(vehicle, targetPosition, targetRotation, vehicleData) {
+            vehicle.userData.isAnimating = true;
+            
+            const startPosition = vehicle.position.clone();
+            const startRotation = vehicle.rotation.y;
+            const duration = 800 / animationSpeed;
+            const startTime = performance.now();
+
+            function animateFrame(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const easeProgress = 1 - Math.pow(1 - progress, 2);
+                
+                vehicle.position.lerpVectors(startPosition, targetPosition, easeProgress);
+                vehicle.rotation.y = startRotation + (targetRotation - startRotation) * easeProgress;
+                
+                updateVehicleState(vehicle, vehicleData);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateFrame);
+                } else {
+                    vehicle.userData.isAnimating = false;
+                    console.log(`Vehicle ${vehicleData.id} animation complete`);
+                }
+            }
+            
+            requestAnimationFrame(animateFrame);
+        }
+
+        function updateVehicleState(vehicle, vehicleData) {
+            const userData = vehicle.userData;
+            if (!userData) return;
+            
+            resetVehicleToDefault(vehicle);
+
+            if (vehicleData.braking || vehicleData.emergency_brake) {
+                activateBrakeLights(vehicle, vehicleData.emergency_brake);
+            }
+
+            if (vehicleData.damaged) {
+                showDamageState(vehicle);
+            }
+
+            if (vehicleData.distracted) {
+                showDistractionState(vehicle);
+            }
+
+            if (vehicleData.sliding || vehicleData.understeer) {
+                showLossOfControlState(vehicle);
+            }
+
+            if (vehicleData.changing) {
+                showLaneChangeState(vehicle);
+            }
+
+            if (vehicleData.turning) {
+                showTurningState(vehicle);
+            }
+        }
+
+        function resetVehicleToDefault(vehicle) {
+            const userData = vehicle.userData;
+            
+            if (userData.brakeLeft) userData.brakeLeft.material.opacity = 0.3;
+            if (userData.brakeRight) userData.brakeRight.material.opacity = 0.3;
+            
+            if (userData.body) {
+                userData.body.material.color.setHex(userData.originalColor);
+            }
+        }
+
+        function activateBrakeLights(vehicle, isEmergency = false) {
+            const userData = vehicle.userData;
+            
+            if (userData.brakeLeft && userData.brakeRight) {
+                if (isEmergency) {
+                    const flashRate = Date.now() * 0.02;
+                    const opacity = 0.7 + 0.3 * Math.sin(flashRate);
+                    userData.brakeLeft.material.opacity = opacity;
+                    userData.brakeRight.material.opacity = opacity;
+                } else {
+                    userData.brakeLeft.material.opacity = 1.0;
+                    userData.brakeRight.material.opacity = 1.0;
+                }
+            }
+        }
+
+        function showDamageState(vehicle) {
+            const userData = vehicle.userData;
+            
+            if (userData.body) {
+                userData.body.material.color.setHex(0x8b0000);
+            }
+            
+            if (!userData.damageEffectCreated) {
+                createDamageEffect(vehicle.position);
+                userData.damageEffectCreated = true;
+            }
+        }
+
+        function showDistractionState(vehicle) {
+            const userData = vehicle.userData;
+            if (userData.body) {
+                userData.body.material.color.setHex(0xffaa00);
+            }
+        }
+
+        function showLossOfControlState(vehicle) {
+            const userData = vehicle.userData;
+            if (userData.body) {
+                userData.body.material.color.setHex(0xff6600);
+            }
+        }
+
+        function showLaneChangeState(vehicle) {
+            const userData = vehicle.userData;
+            if (userData.body) {
+                userData.body.material.color.setHex(0x4488ff);
+            }
+        }
+
+        function showTurningState(vehicle) {
+            const userData = vehicle.userData;
+            if (userData.body) {
+                userData.body.material.color.setHex(0x44aa44);
+            }
+        }
+
+        function createDamageEffect(position) {
+            const particleCount = 15;
+            const particles = [];
+
+            for (let i = 0; i < particleCount; i++) {
+                const particleGeometry = new THREE.SphereGeometry(0.05);
+                const particleMaterial = new THREE.MeshBasicMaterial({ 
+                    color: Math.random() > 0.5 ? 0xff4444 : 0xffaa00,
+                    transparent: true
+                });
+                
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                
+                particle.position.set(
+                    position.x + (Math.random() - 0.5) * 3,
+                    position.y + Math.random() * 2,
+                    position.z + (Math.random() - 0.5) * 3
+                );
+                
+                particle.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.15,
+                    Math.random() * 0.15,
+                    (Math.random() - 0.5) * 0.15
+                );
+                
+                scene.add(particle);
+                particles.push(particle);
+            }
+
+            let lifeTime = 3000;
+            
+            function animateParticles() {
+                lifeTime -= 16;
+                
+                if (lifeTime <= 0) {
+                    particles.forEach(particle => {
+                        scene.remove(particle);
+                        particle.geometry.dispose();
+                        particle.material.dispose();
+                    });
+                    return;
+                }
+
+                particles.forEach(particle => {
+                    particle.position.add(particle.velocity);
+                    particle.velocity.y -= 0.003;
+                    particle.material.opacity = lifeTime / 3000;
+                    particle.rotation.x += 0.02;
+                    particle.rotation.y += 0.02;
+                });
+
+                requestAnimationFrame(animateParticles);
+            }
+            
+            animateParticles();
+        }
+
+        function setupEventListeners() {
+            // Timeline slider
+            const slider = document.getElementById('timeline-slider');
+            if (slider) {
+                slider.addEventListener('input', (e) => {
+                    if (!currentPattern) return;
+                    
+                    const progress = parseFloat(e.target.value) / 100;
+                    const stepIndex = Math.floor(progress * (currentPattern.steps.length - 1));
+                    jumpToStep(stepIndex);
+                });
+            }
+
+            // Play button
+            const playBtn = document.getElementById('play-btn');
+            if (playBtn) {
+                playBtn.addEventListener('click', () => {
+                    togglePlayback();
+                });
+            }
+
+            // Demographic filters
+            const demographicFilters = document.getElementById('demographic-filters');
+            if (demographicFilters) {
+                demographicFilters.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('demo-btn')) {
+                        document.querySelectorAll('.demo-btn').forEach(btn => btn.classList.remove('active'));
+                        e.target.classList.add('active');
+                        filterPatternsByDemographic(e.target.dataset.demo);
+                    }
+                });
+            }
+
+            // Camera controls
+            setupCameraControls();
+
+            // Window resize
+            window.addEventListener('resize', () => onWindowResize());
+
+            // Keyboard controls
+            document.addEventListener('keydown', handleKeyboardInput);
+            
+            console.log('Event listeners setup complete');
+        }
+
+        function setupCameraControls() {
+            const resetBtn = document.getElementById('resetCamera');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    setCameraPosition(20, 15, 20);
+                    cameraMode = 'default';
+                    updateCameraButtonStates('resetCamera');
+                });
+            }
+
+            const topBtn = document.getElementById('topView');
+            if (topBtn) {
+                topBtn.addEventListener('click', () => {
+                    setCameraPosition(0, 40, 0);
+                    cameraMode = 'top';
+                    updateCameraButtonStates('topView');
+                });
+            }
+
+            const sideBtn = document.getElementById('sideView');
+            if (sideBtn) {
+                sideBtn.addEventListener('click', () => {
+                    setCameraPosition(30, 5, 0);
+                    cameraMode = 'side';
+                    updateCameraButtonStates('sideView');
+                });
+            }
+
+            const autoBtn = document.getElementById('autoRotate');
+            if (autoBtn) {
+                autoBtn.addEventListener('click', () => {
+                    autoRotateEnabled = !autoRotateEnabled;
+                    cameraMode = autoRotateEnabled ? 'auto' : 'default';
+                    updateCameraButtonStates('autoRotate');
+                });
+            }
+        }
+
+        function updateCameraButtonStates(activeButton) {
+            document.querySelectorAll('.camera-btn').forEach(btn => {
+                btn.style.background = 'rgba(0, 0, 0, 0.7)';
+            });
+            
+            const activeBtn = document.getElementById(activeButton);
+            if (activeBtn) {
+                activeBtn.style.background = 'rgba(255, 69, 0, 0.8)';
+            }
+        }
+
+        function setCameraPosition(x, y, z) {
+            if (!camera) return;
+            
+            const targetPosition = new THREE.Vector3(x, y, z);
+            const startPosition = camera.position.clone();
+            const duration = 1000;
+            const startTime = performance.now();
+
+            function animateCamera(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const easeProgress = 1 - Math.pow(1 - progress, 2);
+                
+                camera.position.lerpVectors(startPosition, targetPosition, easeProgress);
+                camera.lookAt(0, 0, 0);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateCamera);
+                }
+            }
+            
+            requestAnimationFrame(animateCamera);
+            console.log(`Camera moving to position: (${x}, ${y}, ${z})`);
+        }
+
+        function togglePlayback() {
+            if (!currentPattern) {
+                console.warn('No pattern selected');
+                return;
+            }
+
+            isPlaying = !isPlaying;
+            const playBtn = document.getElementById('play-btn');
+            
+            if (playBtn) {
+                playBtn.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+            }
+
+            if (isPlaying) {
+                console.log('Starting animation playback');
+                playAnimation();
+            } else {
+                console.log('Pausing animation playback');
+            }
+        }
+
+        function playAnimation() {
+            if (!isPlaying || !currentPattern) return;
+
+            const totalSteps = currentPattern.steps.length;
+            const stepDuration = 1500 / animationSpeed;
+
+            function nextStep() {
+                if (!isPlaying) return;
+
+                currentStep = (currentStep + 1) % totalSteps;
+                updateVehiclePositions(currentStep, true);
+
+                const progress = currentStep === 0 ? 0 : (currentStep / (totalSteps - 1)) * 100;
+                
+                const timelineSlider = document.getElementById('timeline-slider');
+                const progressFill = document.getElementById('progress-fill');
+                
+                if (timelineSlider) timelineSlider.value = progress;
+                if (progressFill) progressFill.style.width = progress + '%';
+
+                updateScenarioPanel();
+
+                if (currentStep === totalSteps - 1) {
+                    setTimeout(() => {
+                        if (isPlaying) {
+                            currentStep = -1;
+                            setTimeout(nextStep, stepDuration);
+                        }
+                    }, stepDuration * 2);
+                } else {
+                    setTimeout(nextStep, stepDuration);
+                }
+            }
+
+            setTimeout(nextStep, stepDuration);
+        }
+
+        function handleKeyboardInput(e) {
+            if (!currentPattern) return;
+            
+            switch(e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    togglePlayback();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    jumpToStep(Math.max(0, currentStep - 1));
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    jumpToStep(Math.min(currentPattern.steps.length - 1, currentStep + 1));
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    if (isPlaying) togglePlayback();
+                    break;
+                case 'KeyR':
+                    e.preventDefault();
+                    setCameraPosition(20, 15, 20);
+                    cameraMode = 'default';
+                    break;
+            }
+        }
+
+        function filterPatternsByDemographic(demographic) {
+            const buttons = document.querySelectorAll('.pattern-btn');
+            
+            buttons.forEach(button => {
+                const patternKey = button.dataset.pattern;
+                const pattern = crashPatterns[patternKey];
+                
+                if (!pattern) return;
+                
+                const shouldShow = demographic === 'all' || 
+                                 (pattern.demographics && pattern.demographics.includes(demographic));
+                
+                button.style.display = shouldShow ? 'block' : 'none';
+            });
+            
+            console.log('Filtered patterns by demographic:', demographic);
+        }
+
+        function onWindowResize() {
+            if (!camera || !renderer) return;
+            
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            console.log('Window resized, camera and renderer updated');
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (autoRotateEnabled && cameraMode === 'default') {
+                const time = Date.now() * 0.0002;
+                camera.position.x = Math.cos(time) * 25;
+                camera.position.z = Math.sin(time) * 25;
+                camera.lookAt(0, 0, 0);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function showError(message) {
+            const loading = document.getElementById('loading');
+            if (loading) loading.style.display = 'none';
+            
+            console.error(message);
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(255, 0, 0, 0.9);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                z-index: 10000;
+                text-align: center;
+                font-family: Arial, sans-serif;
+            `;
+            errorDiv.innerHTML = `
+                <h3>⚠️ Error</h3>
+                <p>${message}</p>
+                <button onclick="this.parentElement.remove()" style="
+                    margin-top: 10px;
+                    padding: 5px 15px;
+                    background: white;
+                    color: red;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                ">Close</button>
+            `;
+            document.body.appendChild(errorDiv);
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, starting 3D crash reconstruction dashboard...');
+            
+            if (typeof THREE === 'undefined') {
+                showError('Three.js library failed to load. Please check your internet connection.');
+                return;
+            }
+            
+            try {
+                init();
+            } catch (error) {
+                console.error('Failed to initialize application:', error);
+                showError('Failed to initialize 3D dashboard: ' + error.message);
+            }
+        });
+
+        // Make functions global for onclick handlers
+        window.jumpToStep = jumpToStep;
+    </script>
+</body>
+</html>

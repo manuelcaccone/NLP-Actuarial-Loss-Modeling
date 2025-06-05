@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Crash Reconstruction Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .dashboard-container {
+            display: grid;
+            grid-template-areas: 
+                "controls info"
+                "timeline timeline";
+            grid-template-columns: 350px 1fr;
+            grid-template-rows: 1fr 150px;
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+        }
+        
+        .panel {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .controls-panel {
+            grid-area: controls;
+        }
+        
+        .info-panel {
+            grid-area: info;
+            position: relative;
+        }
+        
+        .timeline-panel {
+            grid-area: timeline;
+        }
+        
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .pattern-btn {
+            display: block;
+            width: 100%;
+            margin: 8px 0;
+            padding: 12px;
+            background: rgba(255, 69, 0, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 69, 0, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s ease;
+            font-size: 11px;
+        }
+        
+        .pattern-btn:hover {
+            background: rgba(255, 69, 0, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 69, 0, 0.3);
+        }
+        
+        .pattern-btn.active {
+            background: linear-gradient(135deg, #ff4500, #ff6b35);
+            border-color: #ff4500;
+            box-shadow: 0 6px 20px rgba(255, 69, 0, 0.4);
+        }
+        
+        .filter-btn {
+            display: inline-block;
+            margin: 5px;
+            padding: 8px 15px;
+            background: rgba(0, 212, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .filter-btn.active {
+            background: linear-gradient(135deg, #00d4ff, #0088cc);
+        }
+        
+        .play-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin-right: 15px;
+        }
+        
+        .play-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+        
+        .slider {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.5);
+        }
+        
+        .timeline-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .step-indicator {
+            display: inline-block;
+            padding: 6px 10px;
+            margin: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 10px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        
+        .step-indicator:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: #ffd700;
+        }
+        
+        .step-indicator.active {
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #1a1a2e;
+            font-weight: bold;
+        }
+        
+        .panel-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-align: center;
+            background: linear-gradient(135deg, #ff4500, #ff6b35);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .info-title {
+            background: linear-gradient(135deg, #00d4ff, #0088cc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .timeline-title {
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .pattern-info {
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #00d4ff;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .keyword {
+            background: rgba(0, 150, 255, 0.2);
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            border: 1px solid rgba(0, 150, 255, 0.3);
+        }
+        
+        .camera-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .camera-btn {
+            width: 45px;
+            height: 45px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .camera-btn:hover {
+            background: rgba(255, 69, 0, 0.8);
+            transform: scale(1.1);
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            z-index: 1000;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 107, 53, 0.3);
+            border-top: 4px solid #ff6b35;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-areas: 
+                    "controls"
+                    "info"
+                    "timeline";
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        Loading 3D Dashboard...
+    </div>
+    
+    <div class="camera-controls">
+        <button class="camera-btn" onclick="setCameraView('default')" title="Default View">🔄</button>
+        <button class="camera-btn" onclick="setCameraView('top')" title="Top View">⬇️</button>
+        <button class="camera-btn" onclick="setCameraView('side')" title="Side View">↗️</button>
+        <button class="camera-btn" onclick="toggleAutoRotate()" title="Auto Rotate">🔄</button>
+    </div>
+    
+    <div class="dashboard-container">
+        <div class="panel controls-panel">
+            <h3 class="panel-title">🚗 Gender Risk Patterns</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <button class="filter-btn active" onclick="filterGender('all')">All</button>
+                <button class="filter-btn" onclick="filterGender('male')">👨 Male</button>
+                <button class="filter-btn" onclick="filterGender('female')">👩 Female</button>
+            </div>
+            
+            <div id="pattern-list"></div>
+        </div>
+        
+        <div class="panel info-panel">
+            <h3 class="panel-title info-title">📋 Pattern Analysis</h3>
+            <div id="pattern-info">
+                <div class="pattern-info">
+                    <h4>Gender-Based Crash Risk Analysis</h4>
+                    <p>Select a pattern to view detailed 3D reconstruction based on real research data.</p>
+                    <h5>Research Findings:</h5>
+                    <ul style="margin-left: 20px; font-size: 11px;">
+                        <li><strong>Males:</strong> Higher frequency, more risky behaviors in complex scenarios</li>
+                        <li><strong>Females:</strong> Higher severity when crashes occur, more cautious approach</li>
+                        <li>Patterns identified through comprehensive keyword analysis</li>
+                        <li>Risk scores based on real statistical data</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel timeline-panel">
+            <h3 class="panel-title timeline-title">⏱️ Crash Timeline</h3>
+            <div class="timeline-controls">
+                <button class="play-btn" id="play-btn" onclick="togglePlay()">▶ Play</button>
+                <input type="range" class="slider" id="timeline-slider" min="0" max="100" value="0" oninput="onSliderChange()">
+                <span id="step-counter" style="color: #ffd700; font-weight: bold;">0/0</span>
+            </div>
+            <div id="timeline-steps">Select a pattern to view reconstruction steps</div>
+        </div>
+    </div>
+    
+    <div id="canvas-container"></div>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer;
+        let vehicles = {};
+        let currentPattern = null;
+        let currentStep = 0;
+        let isPlaying = false;
+        let animationTimer = null;
+        let autoRotate = true;
+        let cameraMode = 'default';
+
+        // Enhanced crash patterns with smoother animation data
+        const patterns = {
+            'intersection-complexity': {
+                name: 'Intersection Complexity',
+                gender: 'male',
+                riskScore: 2.15,
+                cases: 40,
+                frequency: 'High',
+                description: 'Higher risk propensity in complex traffic scenarios at intersections',
+                keywords: ['v2', 'v1', 'intersection', 'vehicle', 'lane', 'critical'],
+                steps: [
+                    {
+                        desc: 'V2 approaches intersection with excessive speed, V1 waiting',
+                        duration: 2000,
+                        vehicles: [
+                            {id: 'v1', x: -2, z: -8, rotation: 0, color: 0x00aa00, state: 'waiting'},
+                            {id: 'v2', x: -20, z: 2, rotation: 90, color: 0x0066ff, state: 'normal', speed: 1.2}
+                        ]
+                    },
+                    {
+                        desc: 'V2 ignores right-of-way, showing risky behavior',
+                        duration: 1800,
+                        vehicles: [
+                            {id: 'v1', x: -1, z: -4, rotation: 0, color: 0x00aa00, state: 'cautious'},
+                            {id: 'v2', x: -12, z: 1, rotation: 90, color: 0xff6600, state: 'risky', speed: 1.3}
+                        ]
+                    },
+                    {
+                        desc: 'V1 enters intersection with right-of-way, V2 continues',
+                        duration: 1500,
+                        vehicles: [
+                            {id: 'v1', x: 0, z: -1, rotation: 0, color: 0x00aa00, state: 'normal'},
+                            {id: 'v2', x: -6, z: 0, rotation: 75, color: 0xff3300, state: 'critical', speed: 1.1}
+                        ]
+                    },
+                    {
+                        desc: 'Critical moment: both vehicles in intersection',
+                        duration: 1200,
+                        vehicles: [
+                            {id: 'v1', x: 1, z: 1, rotation: 0, color: 0xffff00, state: 'braking'},
+                            {id: 'v2', x: -2, z: -1, rotation: 45, color: 0xff0000, state: 'emergency'}
+                        ]
+                    },
+                    {
+                        desc: 'T-bone collision - typical male risk pattern outcome',
+                        duration: 3000,
+                        vehicles: [
+                            {id: 'v1', x: 2, z: 2, rotation: 15, color: 0x660000, state: 'damaged'},
+                            {id: 'v2', x: 1, z: 0, rotation: 60, color: 0x660000, state: 'damaged'}
+                        ]
+                    }
+                ]
+            },
+            
+            'road-right': {
+                name: 'Road-Right Pattern',
+                gender: 'male',
+                riskScore: 1.73,
+                cases: 133,
+                frequency: 'Very High',
+                description: 'Problems with direction changes and curve navigation',
+                keywords: ['road', 'right', 'v1', 'vehicle', 'driver', 'roadway'],
+                steps: [
+                    {
+                        desc: 'V1 approaches right curve with excessive speed',
+                        duration: 2000,
+                        vehicles: [{id: 'v1', x: -18, z: -6, rotation: 0, color: 0x0066ff, state: 'normal', speed: 1.3}]
+                    },
+                    {
+                        desc: 'Driver underestimates curve difficulty - risky behavior',
+                        duration: 1800,
+                        vehicles: [{id: 'v1', x: -10, z: -4, rotation: 15, color: 0xff6600, state: 'risky', speed: 1.2}]
+                    },
+                    {
+                        desc: 'Vehicle too fast for curve - beginning to lose control',
+                        duration: 1500,
+                        vehicles: [{id: 'v1', x: -4, z: -1, rotation: 35, color: 0xff3300, state: 'losing_control', speed: 0.8}]
+                    },
+                    {
+                        desc: 'Complete loss of control in right curve',
+                        duration: 1200,
+                        vehicles: [{id: 'v1', x: 2, z: 2, rotation: 60, color: 0xff0000, state: 'out_of_control', speed: 0.4}]
+                    },
+                    {
+                        desc: 'Vehicle leaves roadway - single vehicle crash',
+                        duration: 3000,
+                        vehicles: [{id: 'v1', x: 8, z: 6, rotation: 90, color: 0x660000, state: 'crashed', speed: 0}]
+                    }
+                ]
+            },
+            
+            'vehicle-lane': {
+                name: 'Vehicle-Lane Pattern',
+                gender: 'male',
+                riskScore: 1.70,
+                cases: 327,
+                frequency: 'Very High',
+                description: 'Lane management and vehicle interaction problems',
+                keywords: ['vehicle', 'v1', 'driver', 'lane', 'v2', 'crash', 'critical'],
+                steps: [
+                    {
+                        desc: 'V1 and V2 in adjacent lanes, V1 not checking mirrors',
+                        duration: 2000,
+                        vehicles: [
+                            {id: 'v1', x: -15, z: -3, rotation: 0, color: 0x0066ff, state: 'normal'},
+                            {id: 'v2', x: -18, z: 3, rotation: 0, color: 0x00aa00, state: 'normal'}
+                        ]
+                    },
+                    {
+                        desc: 'V1 sudden lane change decision - inadequate management',
+                        duration: 1800,
+                        vehicles: [
+                            {id: 'v1', x: -8, z: -1, rotation: 10, color: 0xff6600, state: 'changing_lanes'},
+                            {id: 'v2', x: -10, z: 3, rotation: 0, color: 0x00aa00, state: 'normal'}
+                        ]
+                    },
+                    {
+                        desc: 'Critical vehicle interaction - V1 invades V2 lane',
+                        duration: 1500,
+                        vehicles: [
+                            {id: 'v1', x: -4, z: 1, rotation: 20, color: 0xff3300, state: 'critical'},
+                            {id: 'v2', x: -5, z: 2.5, rotation: 0, color: 0xffff00, state: 'braking'}
+                        ]
+                    },
+                    {
+                        desc: 'V2 emergency braking but cannot avoid collision',
+                        duration: 1200,
+                        vehicles: [
+                            {id: 'v1', x: 0, z: 1.5, rotation: 25, color: 0xff0000, state: 'emergency'},
+                            {id: 'v2', x: -1, z: 2, rotation: 0, color: 0xff0000, state: 'emergency'}
+                        ]
+                    },
+                    {
+                        desc: 'Side collision - typical male lane management failure',
+                        duration: 3000,
+                        vehicles: [
+                            {id: 'v1', x: 3, z: 2, rotation: 30, color: 0x660000, state: 'damaged'},
+                            {id: 'v2', x: 2, z: 2.5, rotation: -5, color: 0x660000, state: 'damaged'}
+                        ]
+                    }
+                ]
+            },
+            
+            'vehicle-driver-critical': {
+                name: 'Vehicle-Driver Critical',
+                gender: 'female',
+                riskScore: 2.42,
+                cases: 19,
+                frequency: 'Medium',
+                description: 'When females crash, severity tends to be significantly higher',
+                keywords: ['vehicle', 'driver', 'v2', 'v1', 'lane', 'critical'],
+                steps: [
+                    {
+                        desc: 'Female driver maintaining safe following distance',
+                        duration: 2000,
+                        vehicles: [
+                            {id: 'v1', x: -18, z: 0, rotation: 0, color: 0x4488ff, state: 'cautious'},
+                            {id: 'v2', x: -8, z: 0, rotation: 0, color: 0x00aa00, state: 'normal'}
+                        ]
+                    },
+                    {
+                        desc: 'V2 sudden deceleration, delayed recognition',
+                        duration: 1800,
+                        vehicles: [
+                            {id: 'v1', x: -12, z: 0, rotation: 0, color: 0x88aaff, state: 'hesitant'},
+                            {id: 'v2', x: -4, z: 0, rotation: 0, color: 0xffaa00, state: 'slowing'}
+                        ]
+                    },
+                    {
+                        desc: 'Driver recognizes danger late - delayed reaction time',
+                        duration: 1500,
+                        vehicles: [
+                            {id: 'v1', x: -8, z: 0, rotation: 0, color: 0xff6600, state: 'realizing_danger'},
+                            {id: 'v2', x: -1, z: 0, rotation: 0, color: 0x666666, state: 'stopped'}
+                        ]
+                    },
+                    {
+                        desc: 'Emergency braking but insufficient stopping distance',
+                        duration: 1200,
+                        vehicles: [
+                            {id: 'v1', x: -4, z: 0, rotation: 0, color: 0xff0000, state: 'emergency_braking'},
+                            {id: 'v2', x: 1, z: 0, rotation: 0, color: 0x666666, state: 'stopped'}
+                        ]
+                    },
+                    {
+                        desc: 'High severity rear-end collision - female pattern outcome',
+                        duration: 3000,
+                        vehicles: [
+                            {id: 'v1', x: 0, z: 0, rotation: 0, color: 0x440000, state: 'severe_damage'},
+                            {id: 'v2', x: 3, z: 0, rotation: 0, color: 0x440000, state: 'severe_damage'}
+                        ]
+                    }
+                ]
+            },
+            
+            'intersection-secondary': {
+                name: 'Intersection Secondary',
+                gender: 'female',
+                riskScore: 1.82,
+                cases: 22,
+                frequency: 'Medium',
+                description: 'Similar intersection challenges but with different behavioral dynamics',
+                keywords: ['v2', 'v1', 'intersection', 'vehicle', 'lane', 'critical'],
+                steps: [
+                    {
+                        desc: 'Female driver approaches intersection with heightened caution',
+                        duration: 2000,
+                        vehicles: [
+                            {id: 'v1', x: -10, z: -2, rotation: 0, color: 0x4488ff, state: 'very_cautious'},
+                            {id: 'v2', x: 2, z: -15, rotation: 90, color: 0x00aa00, state: 'normal'}
+                        ]
+                    },
+                    {
+                        desc: 'V1 carefully evaluates situation, V2 approaches faster',
+                        duration: 1800,
+                        vehicles: [
+                            {id: 'v1', x: -6, z: -1, rotation: 0, color: 0x6699ff, state: 'evaluating'},
+                            {id: 'v2', x: 1, z: -8, rotation: 90, color: 0xff6600, state: 'approaching_fast'}
+                        ]
+                    },
+                    {
+                        desc: 'V1 commits to intersection, V2 misjudges timing',
+                        duration: 1500,
+                        vehicles: [
+                            {id: 'v1', x: -2, z: 0, rotation: 0, color: 0x4488ff, state: 'committed'},
+                            {id: 'v2', x: 0, z: -3, rotation: 90, color: 0xff3300, state: 'misjudging'}
+                        ]
+                    },
+                    {
+                        desc: 'Critical intersection conflict - both vehicles present',
+                        duration: 1200,
+                        vehicles: [
+                            {id: 'v1', x: 1, z: 1, rotation: 0, color: 0xffff00, state: 'emergency_response'},
+                            {id: 'v2', x: -1, z: 0, rotation: 60, color: 0xff0000, state: 'emergency'}
+                        ]
+                    },
+                    {
+                        desc: 'High severity side impact - female driver bears greater injury risk',
+                        duration: 3000,
+                        vehicles: [
+                            {id: 'v1', x: 2, z: 2, rotation: 20, color: 0x440000, state: 'severe_damage'},
+                            {id: 'v2', x: 0, z: 1, rotation: 75, color: 0x660000, state: 'damaged'}
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // State color mapping for enhanced visuals
+        const stateColors = {
+            'normal': 0x0066ff,
+            'waiting': 0x00aa00,
+            'cautious': 0x4488ff,
+            'very_cautious': 0x6699ff,
+            'hesitant': 0x88aaff,
+            'evaluating': 0x99bbff,
+            'risky': 0xff6600,
+            'critical': 0xff3300,
+            'losing_control': 0xff3300,
+            'out_of_control': 0xff0000,
+            'changing_lanes': 0xff9900,
+            'braking': 0xffff00,
+            'emergency_braking': 0xff6600,
+            'emergency': 0xff0000,
+            'emergency_response': 0xffaa00,
+            'slowing': 0xffaa00,
+            'approaching_fast': 0xff6600,
+            'misjudging': 0xff3300,
+            'committed': 0x4488ff,
+            'realizing_danger': 0xff6600,
+            'stopped': 0x666666,
+            'damaged': 0x660000,
+            'severe_damage': 0x440000,
+            'crashed': 0x330000
+        };
+
+        // Initialize Three.js with enhanced graphics
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x001122);
+            scene.fog = new THREE.Fog(0x001122, 50, 200);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(25, 20, 25);
+            camera.lookAt(0, 0, 0);
+
+            // Renderer setup with enhanced quality
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Enhanced lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(50, 50, 50);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 1;
+            directionalLight.shadow.camera.far = 200;
+            directionalLight.shadow.camera.left = -50;
+            directionalLight.shadow.camera.right = 50;
+            directionalLight.shadow.camera.top = 50;
+            directionalLight.shadow.camera.bottom = -50;
+            scene.add(directionalLight);
+
+            // Additional fill light
+            const fillLight = new THREE.DirectionalLight(0x4488ff, 0.3);
+            fillLight.position.set(-30, 20, -30);
+            scene.add(fillLight);
+
+            // Create enhanced road environment
+            createRoadEnvironment();
+            
+            // Create UI
+            createPatternButtons();
+            
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+
+            // Start animation loop
+            animate();
+        }
+
+        function createRoadEnvironment() {
+            // Main road surface
+            const roadGeometry = new THREE.PlaneGeometry(120, 40);
+            const roadMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x2a2a2a,
+                transparent: true,
+                opacity: 0.9
+            });
+            const road = new THREE.Mesh(roadGeometry, roadMaterial);
+            road.rotation.x = -Math.PI / 2;
+            road.receiveShadow = true;
+            scene.add(road);
+
+            // Lane markings - center line
+            for (let i = -50; i <= 50; i += 8) {
+                const marking = new THREE.Mesh(
+                    new THREE.BoxGeometry(4, 0.1, 0.3),
+                    new THREE.MeshBasicMaterial({ color: 0xffffff })
+                );
+                marking.position.set(i, 0.05, 0);
+                scene.add(marking);
+            }
+
+            // Lane markings - side lines
+            [-7, 7].forEach(zPos => {
+                for (let i = -50; i <= 50; i += 6) {
+                    const marking = new THREE.Mesh(
+                        new THREE.BoxGeometry(3, 0.1, 0.2),
+                        new THREE.MeshBasicMaterial({ color: 0xffffff })
+                    );
+                    marking.position.set(i, 0.05, zPos);
+                    scene.add(marking);
+                }
+            });
+
+            // Road barriers
+            [-15, 15].forEach(zPos => {
+                const barrier = new THREE.Mesh(
+                    new THREE.BoxGeometry(120, 1, 0.5),
+                    new THREE.MeshLambertMaterial({ color: 0x666666 })
+                );
+                barrier.position.set(0, 0.5, zPos);
+                barrier.castShadow = true;
+                scene.add(barrier);
+            });
+
+            // Intersection markers
+            const intersectionGeometry = new THREE.PlaneGeometry(20, 20);
+            const intersectionMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x333333,
+                transparent: true,
+                opacity: 0.7
+            });
+            const intersection = new THREE.Mesh(intersectionGeometry, intersectionMaterial);
+            intersection.rotation.x = -Math.PI / 2;
+            intersection.position.y = 0.01;
+            scene.add(intersection);
+        }
+
+        function createPatternButtons() {
+            const container = document.getElementById('pattern-list');
+            container.innerHTML = '';
+            
+            Object.keys(patterns).forEach(key => {
+                const pattern = patterns[key];
+                const button = document.createElement('button');
+                button.className = 'pattern-btn';
+                
+                const riskClass = pattern.riskScore > 2.0 ? 'High Risk' : 
+                                 pattern.riskScore > 1.6 ? 'Medium Risk' : 'Low Risk';
+                
+                button.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${pattern.gender === 'male' ? '👨' : '👩'} ${pattern.name}</strong><br>
+                            <small style="opacity: 0.8;">${pattern.description.substring(0, 45)}...</small><br>
+                            <small style="color: #ffd700;">Cases: ${pattern.cases} | ${pattern.frequency}</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="background: ${pattern.riskScore > 2.0 ? '#ff4444' : pattern.riskScore > 1.6 ? '#ffaa44' : '#44ff88'}; 
+                                        color: ${pattern.riskScore > 1.6 ? 'white' : 'black'}; 
+                                        padding: 3px 6px; border-radius: 10px; font-size: 10px; font-weight: bold;">
+                                ${pattern.riskScore}
+                            </div>
+                            <small style="font-size: 8px; opacity: 0.7;">${riskClass}</small>
+                        </div>
+                    </div>
+                `;
+                button.onclick = () => selectPattern(key);
+                button.dataset.gender = pattern.gender;
+                container.appendChild(button);
+            });
+        }
+
+        function selectPattern(patternKey) {
+            // Update button states
+            document.querySelectorAll('.pattern-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.pattern-btn').classList.add('active');
+            
+            // Stop any current animation
+            if (animationTimer) {
+                clearTimeout(animationTimer);
+                animationTimer = null;
+            }
+            isPlaying = false;
+            
+            // Load pattern
+            currentPattern = patterns[patternKey];
+            currentStep = 0;
+            
+            // Clear existing vehicles
+            clearVehicles();
+            
+            // Update info panel
+            updateInfoPanel();
+            
+            // Load first step
+            loadStep(0, false);
+            
+            // Update timeline
+            updateTimeline();
+            
+            // Reset controls
+            document.getElementById('play-btn').textContent = '▶ Play';
+            document.getElementById('timeline-slider').value = 0;
+            updateStepCounter();
+        }
+
+        function clearVehicles() {
+            Object.values(vehicles).forEach(vehicle => {
+                scene.remove(vehicle);
+                // Dispose of geometries and materials
+                vehicle.traverse(child => {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(mat => mat.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                });
+            });
+            vehicles = {};
+        }
+
+        function updateInfoPanel() {
+            const info = document.getElementById('pattern-info');
+            const pattern = currentPattern;
+            
+            const genderText = pattern.gender === 'male' ? 'Male Drivers' : 'Female Drivers';
+            const riskLevel = pattern.riskScore > 2.0 ? 'HIGH' : pattern.riskScore > 1.6 ? 'MEDIUM' : 'LOW';
+            const riskColor = pattern.riskScore > 2.0 ? '#ff4444' : pattern.riskScore > 1.6 ? '#ffaa44' : '#44ff88';
+            
+            info.innerHTML = `
+                <div class="pattern-info">
+                    <h4>${pattern.name}</h4>
+                    <p><strong>Target Population:</strong> ${genderText}</p>
+                    <p><strong>Description:</strong> ${pattern.description}</p>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span><strong>Risk Score:</strong> <span style="color: ${riskColor}; font-weight: bold;">${pattern.riskScore}</span></span>
+                        <span><strong>Cases:</strong> ${pattern.cases}</span>
+                        <span><strong>Frequency:</strong> ${pattern.frequency}</span>
+                    </div>
+                    <div style="background: rgba(255, 0, 0, 0.1); padding: 8px; border-radius: 5px; margin: 10px 0;">
+                        <strong style="color: ${riskColor};">Risk Level: ${riskLevel}</strong>
+                    </div>
+                    <p><strong>Research Keywords:</strong></p>
+                    <div class="keywords">
+                        ${pattern.keywords.map(kw => `<span class="keyword">${kw}</span>`).join('')}
+                    </div>
+                    <hr style="margin: 15px 0; opacity: 0.3;">
+                    <div id="current-step-info">
+                        <p><strong>Current Step:</strong> ${currentStep + 1}/${pattern.steps.length}</p>
+                        <p style="font-style: italic;">${pattern.steps[currentStep].desc}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateTimeline() {
+            const content = document.getElementById('timeline-steps');
+            if (!currentPattern) {
+                content.innerHTML = '<p style="text-align: center; color: #999;">Select a pattern to view reconstruction steps</p>';
+                return;
+            }
+            
+            content.innerHTML = '';
+            currentPattern.steps.forEach((step, index) => {
+                const stepDiv = document.createElement('div');
+                stepDiv.className = 'step-indicator';
+                if (index === currentStep) stepDiv.classList.add('active');
+                stepDiv.innerHTML = `${index + 1}. ${step.desc.substring(0, 30)}...`;
+                stepDiv.onclick = () => jumpToStep(index);
+                content.appendChild(stepDiv);
+            });
+        }
+
+        function updateStepCounter() {
+            const counter = document.getElementById('step-counter');
+            if (currentPattern) {
+                counter.textContent = `${currentStep + 1}/${currentPattern.steps.length}`;
+            } else {
+                counter.textContent = '0/0';
+            }
+        }
+
+        function loadStep(stepIndex, animate = true) {
+            if (!currentPattern || stepIndex < 0 || stepIndex >= currentPattern.steps.length) return;
+            
+            const prevStep = currentStep;
+            currentStep = stepIndex;
+            const step = currentPattern.steps[stepIndex];
+            
+            // Update current step info
+            const stepInfo = document.getElementById('current-step-info');
+            if (stepInfo) {
+                stepInfo.innerHTML = `
+                    <p><strong>Current Step:</strong> ${currentStep + 1}/${currentPattern.steps.length}</p>
+                    <p style="font-style: italic;">${step.desc}</p>
+                `;
+            }
+            
+            // Animate vehicles to new positions
+            step.vehicles.forEach(vehicleData => {
+                let vehicle = vehicles[vehicleData.id];
+                
+                if (!vehicle) {
+                    // Create new vehicle
+                    vehicle = createVehicle(vehicleData.id);
+                    vehicles[vehicleData.id] = vehicle;
+                    vehicle.position.set(vehicleData.x, 0, vehicleData.z);
+                    vehicle.rotation.y = (vehicleData.rotation || 0) * Math.PI / 180;
+                }
+                
+                if (animate && prevStep !== stepIndex) {
+                    // Smooth animation to new position
+                    animateVehicle(vehicle, vehicleData);
+                } else {
+                    // Instant positioning
+                    vehicle.position.set(vehicleData.x, 0, vehicleData.z);
+                    vehicle.rotation.y = (vehicleData.rotation || 0) * Math.PI / 180;
+                    updateVehicleAppearance(vehicle, vehicleData);
+                }
+            });
+            
+            updateTimeline();
+            updateStepCounter();
+        }
+
+        function animateVehicle(vehicle, targetData) {
+            const startPos = vehicle.position.clone();
+            const startRot = vehicle.rotation.y;
+            const targetPos = new THREE.Vector3(targetData.x, 0, targetData.z);
+            const targetRot = (targetData.rotation || 0) * Math.PI / 180;
+            
+            const duration = 1500; // Smooth 1.5 second animation
+            const startTime = Date.now();
+            
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Smooth easing function
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                vehicle.position.lerpVectors(startPos, targetPos, easeProgress);
+                vehicle.rotation.y = startRot + (targetRot - startRot) * easeProgress;
+                
+                updateVehicleAppearance(vehicle, targetData);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            animate();
+        }
+
+        function createVehicle(id) {
+            const group = new THREE.Group();
+            
+            // Car body with enhanced geometry
+            const bodyGeometry = new THREE.BoxGeometry(4, 1.5, 1.8);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x0066ff,
+                shininess: 100,
+                specular: 0x222222
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.75;
+            body.castShadow = true;
+            group.add(body);
+            
+            // Windshield
+            const windshieldGeometry = new THREE.BoxGeometry(2.5, 0.8, 1.6);
+            const windshieldMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x87ceeb,
+                transparent: true,
+                opacity: 0.7,
+                reflectivity: 0.5
+            });
+            const windshield = new THREE.Mesh(windshieldGeometry, windshieldMaterial);
+            windshield.position.set(0.5, 1.4, 0);
+            group.add(windshield);
+            
+            // Wheels with better detail
+            const wheelGeometry = new THREE.CylinderGeometry(0.35, 0.35, 0.3);
+            const wheelMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+            
+            const wheelPositions = [[-1.5, 0.35, -0.9], [-1.5, 0.35, 0.9], [1.5, 0.35, -0.9], [1.5, 0.35, 0.9]];
+            wheelPositions.forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                wheel.position.set(pos[0], pos[1], pos[2]);
+                wheel.rotation.z = Math.PI / 2;
+                wheel.castShadow = true;
+                group.add(wheel);
+            });
+            
+            // Brake lights
+            const brakeGeometry = new THREE.SphereGeometry(0.15);
+            const brakeMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff0000,
+                transparent: true,
+                opacity: 0.3
+            });
+            
+            const leftBrake = new THREE.Mesh(brakeGeometry, brakeMaterial.clone());
+            leftBrake.position.set(-1.8, 0.8, -0.7);
+            group.add(leftBrake);
+            
+            const rightBrake = new THREE.Mesh(brakeGeometry, brakeMaterial.clone());
+            rightBrake.position.set(-1.8, 0.8, 0.7);
+            group.add(rightBrake);
+            
+            // Store references
+            group.userData = {
+                id: id,
+                body: body,
+                brakeLeft: leftBrake,
+                brakeRight: rightBrake,
+                windshield: windshield
+            };
+            
+            scene.add(group);
+            return group;
+        }
+
+        function updateVehicleAppearance(vehicle, data) {
+            const userData = vehicle.userData;
+            const state = data.state || 'normal';
+            const color = stateColors[state] || data.color || 0x0066ff;
+            
+            // Update body color
+            userData.body.material.color.setHex(color);
+            
+            // Update brake lights based on state
+            const brakeOpacity = ['braking', 'emergency_braking', 'emergency', 'emergency_response'].includes(state) ? 1.0 : 0.3;
+            userData.brakeLeft.material.opacity = brakeOpacity;
+            userData.brakeRight.material.opacity = brakeOpacity;
+            
+            // Add special effects for emergency states
+            if (['emergency', 'emergency_braking', 'emergency_response'].includes(state)) {
+                const flash = Math.sin(Date.now() * 0.01) * 0.3 + 0.7;
+                userData.brakeLeft.material.opacity = flash;
+                userData.brakeRight.material.opacity = flash;
+            }
+            
+            // Emissive glow for critical states
+            if (['critical', 'emergency', 'damaged', 'severe_damage'].includes(state)) {
+                userData.body.material.emissive.setHex(0x220000);
+            } else {
+                userData.body.material.emissive.setHex(0x000000);
+            }
+        }
+
+        function jumpToStep(stepIndex) {
+            if (!currentPattern) return;
+            
+            if (animationTimer) {
+                clearTimeout(animationTimer);
+                animationTimer = null;
+            }
+            
+            loadStep(stepIndex, true);
+            const progress = stepIndex / (currentPattern.steps.length - 1) * 100;
+            document.getElementById('timeline-slider').value = progress;
+        }
+
+        function togglePlay() {
+            if (!currentPattern) return;
+            
+            isPlaying = !isPlaying;
+            const btn = document.getElementById('play-btn');
+            btn.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+            
+            if (isPlaying) {
+                playAnimation();
+            } else {
+                if (animationTimer) {
+                    clearTimeout(animationTimer);
+                    animationTimer = null;
+                }
+            }
+        }
+
+        function playAnimation() {
+            if (!isPlaying || !currentPattern) return;
+            
+            const step = currentPattern.steps[currentStep];
+            const duration = step.duration || 2000;
+            
+            const nextStep = (currentStep + 1) % currentPattern.steps.length;
+            
+            animationTimer = setTimeout(() => {
+                if (isPlaying) {
+                    loadStep(nextStep, true);
+                    const progress = nextStep / (currentPattern.steps.length - 1) * 100;
+                    document.getElementById('timeline-slider').value = progress;
+                    playAnimation();
+                }
+            }, duration);
+        }
+
+        function onSliderChange() {
+            if (!currentPattern) return;
+            
+            const value = document.getElementById('timeline-slider').value;
+            const stepIndex = Math.round((value / 100) * (currentPattern.steps.length - 1));
+            
+            if (stepIndex !== currentStep) {
+                if (animationTimer) {
+                    clearTimeout(animationTimer);
+                    animationTimer = null;
+                }
+                loadStep(stepIndex, true);
+            }
+        }
+
+        function filterGender(gender) {
+            // Update filter button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show/hide pattern buttons
+            document.querySelectorAll('#pattern-list .pattern-btn').forEach(btn => {
+                if (gender === 'all' || btn.dataset.gender === gender) {
+                    btn.style.display = 'block';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        }
+
+        function setCameraView(view) {
+            cameraMode = view;
+            
+            switch(view) {
+                case 'default':
+                    animateCamera(25, 20, 25);
+                    break;
+                case 'top':
+                    animateCamera(0, 50, 0);
+                    break;
+                case 'side':
+                    animateCamera(40, 10, 0);
+                    break;
+            }
+        }
+
+        function animateCamera(targetX, targetY, targetZ) {
+            const startPos = camera.position.clone();
+            const targetPos = new THREE.Vector3(targetX, targetY, targetZ);
+            const duration = 1500;
+            const startTime = Date.now();
+            
+            autoRotate = false; // Stop auto rotation during manual camera movement
+            
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                camera.position.lerpVectors(startPos, targetPos, easeProgress);
+                camera.lookAt(0, 0, 0);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Re-enable auto rotate after animation if it was default view
+                    if (cameraMode === 'default') {
+                        setTimeout(() => { autoRotate = true; }, 1000);
+                    }
+                }
+            }
+            
+            animate();
+        }
+
+        function toggleAutoRotate() {
+            autoRotate = !autoRotate;
+            if (autoRotate) {
+                cameraMode = 'default';
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Auto rotate camera in default mode
+            if (autoRotate && cameraMode === 'default') {
+                const time = Date.now() * 0.0003;
+                const radius = 35;
+                camera.position.x = Math.cos(time) * radius;
+                camera.position.z = Math.sin(time) * radius;
+                camera.position.y = 20 + Math.sin(time * 0.5) * 5;
+                camera.lookAt(0, 0, 0);
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // Window resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
